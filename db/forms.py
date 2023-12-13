@@ -18,10 +18,3 @@ class AgregarClienteForm(FlaskForm):
 
 
 
-class AsignarMembresiaForm(FlaskForm):
-    cedula = StringField('Cédula', validators=[DataRequired(), Length(min=1, max=20)])
-    buscar_cliente = SubmitField('Buscar')
-    membresia = SelectField('Membresía', choices=[], validators=[DataRequired()])
-    asignar_membresia = SubmitField('Asignar Membresía')
-    nombre = HiddenField()  # Campo oculto para almacenar el nombre seleccionado
-    apellido = HiddenField()  # Campo oculto para almacenar el apellido seleccionado

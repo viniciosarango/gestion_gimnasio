@@ -94,32 +94,6 @@ def inactivar_cliente_db(id_cliente):
 
 
 
-def asignar_membresia_cliente(cedula, id_membresia):
-    try:
-        print("Iniciando asignar_membresia_cliente")
-        print(f"Asignando membresía a cliente con cédula {cedula} y ID de membresía {id_membresia}")
-
-        # Obtén información del cliente antes de asignar membresía
-        cliente_anterior = buscar_cliente_por_cedula(cedula)
-        print(f"Información anterior del cliente: {cliente_anterior}")
-
-        # Asignar la membresía al cliente
-        cliente = buscar_cliente_por_cedula(cedula)
-        membresia = obtener_info_membresias_disponibles(id_membresia)
-        cliente.asignar_membresia(membresia)
-
-        print(f"Membresía asignada a cliente con cédula {cedula}. ID de membresía: {id_membresia}")
-
-        # Obtén información del cliente después de asignar membresía
-        cliente_actualizado = buscar_cliente_por_cedula(cedula)
-        print(f"Información actualizada del cliente: {cliente_actualizado}")
-
-        flash('Membresía asignada con éxito', 'success')
-    except Exception as e:
-        print(f"Error al asignar membresía: {e}")
-        flash('Error al asignar membresía', 'error')
-
-
 
 
 def buscar_cliente_por_cedula(cedula):
@@ -153,25 +127,6 @@ def buscar_cliente_por_id(id_cliente):
         return None
 
 
-
-def obtener_info_membresias_disponibles():
-    try:
-        with obtener_conexion().cursor() as cursor:
-            cursor.execute("SELECT id_membresia, nom_membresia, duracion, costo FROM membresia")
-            return [dict(zip(cursor.column_names, row)) for row in cursor.fetchall()]
-    except Exception as error:
-        print(f"Error al obtener información de membresías disponibles: {error}")
-        return []
-
-
-def obtener_membresias_disponibles():
-    try:
-        with obtener_conexion().cursor() as cursor:
-            cursor.execute("SELECT id_membresia, nom_membresia FROM membresia")
-            return cursor.fetchall()
-    except Exception as error:
-        print(f"Error al obtener membresías disponibles: {error}")
-        return []
 
 
 def obtener_lista_clientes():
@@ -249,8 +204,6 @@ def obtener_cliente_por_nombre_apellido(nombre, apellido):
     except Exception as error:
         print(f"Error al obtener cliente por nombre y apellido: {error}")
     return None
-
-
 
 
 

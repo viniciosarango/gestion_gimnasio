@@ -2,8 +2,8 @@ import os
 from db.database import obtener_conexion
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
-from db.forms import LoginForm, AgregarClienteForm, AsignarMembresiaForm
-from db.controlador import autenticar_usuario, obtener_lista_clientes, agregar_cliente_db, obtener_membresias_disponibles, buscar_cliente_por_cedula, buscar_cliente_por_id, buscar_clientes_por_termino, obtener_cliente_por_nombre_apellido, asignar_membresia_cliente, obtener_info_membresias_disponibles, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db
+from db.forms import LoginForm, AgregarClienteForm
+from db.controlador import autenticar_usuario, obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_cedula, buscar_cliente_por_id, buscar_clientes_por_termino, obtener_cliente_por_nombre_apellido, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db
 from flask import jsonify
 
 
@@ -61,9 +61,9 @@ def lista_clientes_inactivos():
 
 @app.route('/reactivar_cliente/<int:id_cliente>')
 def reactivar_cliente(id_cliente):
-    # Llamada a la función para reactivar el cliente en la base de datos
+    
     reactivar_cliente_db(id_cliente)
-    # Redireccionar a la lista de clientes inactivos después de reactivar
+    
     return redirect(url_for('lista_clientes_inactivos'))
 
 
@@ -160,57 +160,12 @@ def inactivar_cliente(id_cliente):
     # Redireccionar a la lista de clientes después de inactivar
     return redirect(url_for('lista_clientes'))
 
-
-
-
-#ASIGNACION DE MEMBRESIAS
-@app.route('/asignar_membresia', methods=['GET', 'POST'])
-def asignar_membresia():
-    form = AsignarMembresiaForm()
-
-    if request.method == 'POST' and form.validate_on_submit():
-        cliente_seleccionado = form.cliente_seleccionado.data
-        nombre, apellido = cliente_seleccionado.split() if cliente_seleccionado else ('', '')
-
-        # Obtener el cliente
-        cliente = obtener_cliente_por_nombre_apellido(nombre, apellido)
-        print(f"Nombre: {nombre}, Apellido: {apellido}")
-
-        if cliente:
-            cedula = cliente.get('cedula', '')  # Asegúrate de obtener la cédula correctamente
-            id_cliente = cliente.get('id', '')
-
-            id_membresia = form.membresia.data
-            asignar_membresia_cliente(cedula, id_membresia)
-
-            return redirect(url_for('datos_cliente', id_cliente=id_cliente))
-
-    return render_template('asignar_membresia.html', form=form, cliente=None, cedula_cliente=None)
-
-
-
  
 
 @app.route('/buscar_clientes/<termino>')
 def buscar_clientes(termino):
     clientes = buscar_clientes_por_termino(termino)
     return jsonify(clientes)
-
-
-@app.route('/obtener_membresias_disponibles')
-def obtener_membresias_disponibles_route():
-    membresias = obtener_membresias_disponibles()
-
-    # Formatear la respuesta como una lista de objetos
-    membresias_formateadas = [{'id': mem[0], 'nom_membresia': mem[1]} for mem in membresias]
-
-    return jsonify(membresias_formateadas)
-
-
-
-
-
-
 
 
 
