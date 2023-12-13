@@ -1,0 +1,93 @@
+/* styles.css */
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+.contenedor {
+    
+    display: flex;
+    justify-content: center;
+  }
+
+  .container {
+    margin-top: 20px;
+}  
+
+.titulos_centrados{
+    text-align: center;
+}
+
+.navbar {
+    background-color: #1f4d80;
+}
+
+.navbar-brand img {
+    max-height: 60px;
+}
+
+.navbar-item {
+    color: #ff9900;
+}
+
+.navbar-burger {
+    color: #ff9900;
+}
+
+.bg-sidebar {
+    background-color: #0b3c5d; /* Puedes cambiar este valor al color que prefieras */
+}
+
+
+.container {
+    margin-top: 20px;
+}
+
+/* Estilos específicos para el formulario de inicio de sesión */
+.login-card {
+    margin-top: 20px;
+}
+
+.login-card-title {
+    font-size: 1.5rem;
+}
+
+.login-form {
+    margin-top: 20px;
+}
+
+
+.cliente-tarjeta {
+    display: flex;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.foto-tarjeta {
+    margin-right: 20px;
+}
+
+.foto-perfil {
+    width: 150px; /* Ajusta el tamaño según tus preferencias */
+    height: auto;
+    border: 2px solid #333; /* Borde alrededor de la foto */
+}
+
+.foto-no-disponible {
+    font-weight: bold;
+    color: red;
+}
+
+
+/* Estilos para los enlaces en la barra lateral */
+.sidebar .nav-link {
+    color: white; /* Cambiar a tu color deseado */
+}
+
+/* Estilos para los enlaces grandes centrados */
+.btn-primary,
+.btn-danger {
+    color: white; /* Cambiar a tu color deseado */
+}

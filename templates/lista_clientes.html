@@ -1,0 +1,53 @@
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Lista de Clientes - Dorians Gym{% endblock %}
+
+{% block content %}
+    
+    <h1 class="titulos_centrados">Lista de Clientes</h1>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{{ url_for('agregar_cliente') }}" class="btn btn-success">Añadir Cliente</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cédula</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th>Membresía</th>
+                    <th>Estado</th>
+                    <th>Ver mas</th>
+                    <th>Actualizar</th>
+                    <th>Inactivar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in clientes %}
+                    <tr>
+                        <td>{{ cliente[0] }}</td>
+                        <td>{{ cliente[1] }}</td>
+                        <td>{{ cliente[2] }}</td>
+                        <td>{{ cliente[3] }}</td>
+                        <td>{{ cliente[4] }}</td>
+                        <td>{{ cliente[5] }}</td>
+                        <td>{{ cliente[6] }}</td>
+                        <td>{% if cliente[7] == 1 %} Activo {% else %} Inactivo {% endif %}</td>
+                        <td>
+                            <a href="{{ url_for('datos_cliente', id_cliente=cliente[0]) }}" class="btn btn-primary btn-sm">Ver mas</a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('actualizar_cliente', id_cliente=cliente[0]) }}" class="btn btn-warning btn-sm">Actualizar</a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('inactivar_cliente', id_cliente=cliente[0]) }}" class="btn btn-danger btn-sm">Inactivar</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

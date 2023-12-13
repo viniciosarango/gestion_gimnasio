@@ -1,0 +1,65 @@
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Actualizar Cliente - Dorians Gym{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h1 class="mb-3">Actualizar Cliente</h1>
+                <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+                    {{ form.hidden_tag() }}
+
+                    <div class="mb-3">
+                        {{ form.cedula.label(class="form-label") }}
+                        {{ form.cedula(class="form-control form-control-sm", required=True) }}
+                        <div class="invalid-feedback">
+                            Por favor, ingresa la cédula.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.nombre.label(class="form-label") }}
+                        {{ form.nombre(class="form-control form-control-sm", required=True) }}
+                        <div class="invalid-feedback">
+                            Por favor, ingresa el nombre.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.apellido.label(class="form-label") }}
+                        {{ form.apellido(class="form-control form-control-sm", required=True) }}
+                        <div class="invalid-feedback">
+                            Por favor, ingresa el apellido.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.correo.label(class="form-label") }}
+                        {{ form.correo(class="form-control form-control-sm", required=True, type="email") }}
+                        <div class="invalid-feedback">
+                            Por favor, ingresa un correo válido.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.telefono.label(class="form-label") }}
+                        {{ form.telefono(class="form-control form-control-sm", required=True) }}
+                        <div class="invalid-feedback">
+                            Por favor, ingresa un número de teléfono.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        {{ form.foto.label(class="form-label") }}
+                        {{ form.foto(class="form-control form-control-sm") }}
+                    </div>
+
+                    <div class="mb-3 text-center">
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+{% endblock %}

@@ -1,0 +1,32 @@
+<!-- datos_cliente.html -->
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Datos del Cliente - Dorians Gym{% endblock %}
+
+{% block content %}
+<div class="titulos_centrados">    
+<h1>Datos del Cliente</h1>
+</div>
+    <div class="contenedor">
+        <div class="cliente-tarjeta">
+            {% if cliente['foto_url'] %}
+                <div class="foto-tarjeta">
+                    <img src="{{ cliente['foto_url'] }}" alt="Foto de perfil" class="foto-perfil">
+                </div>    
+            {% else %}
+                <p class="foto-no-disponible">No hay foto disponible</p>
+            {% endif %}
+            <div class="info-tarjeta">
+                <!-- <p><strong>ID:</strong> {{ cliente['id_cliente'] }}</p> -->
+                <p><strong>Cédula:</strong> {{ cliente['cedula'] }}</p>
+                <p><strong>Nombre:</strong> {{ cliente['nombre'] }} {{ cliente['apellido'] }}</p>
+                <p><strong>Correo:</strong> {{ cliente['correo'] }}</p>
+                <p><strong>Teléfono:</strong> {{ cliente['telefono'] }}</p>
+                <p><strong>ID Membresía:</strong> {{ cliente['id_membresia'] }}</p>
+                <p><strong>Estado:</strong> {% if cliente['estado'] == 1 %} Activo {% else %} Inactivo {% endif %}</p>
+            </div>
+        </div>
+    </div>
+    
+
+{% endblock %}

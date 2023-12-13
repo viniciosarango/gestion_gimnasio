@@ -1,0 +1,41 @@
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Iniciar Sesión - Dorians Gym{% endblock %}
+
+{% block content %}
+    <div class="row justify-content-center mt-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-body">
+                    <h1 class="card-title text-center mb-4">Iniciar Sesión</h1>
+                    <form method="post" action="{{ url_for('login') }}" class="needs-validation" novalidate>
+
+                        <div class="mb-3 row">
+                            <label for="{{ form.username.id }}" class="col-md-3 col-form-label">Usuario</label>
+                            <div class="col-md-9">
+                                {{ form.username(class="form-control", required=true) }}
+                                <div class="invalid-feedback">
+                                    Por favor, ingrese su nombre de usuario.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3 row">
+                            <label for="{{ form.password.id }}" class="col-md-3 col-form-label">Contraseña</label>
+                            <div class="col-md-9">
+                                {{ form.password(class="form-control", required=true) }}
+                                <div class="invalid-feedback">
+                                    Por favor, ingrese su contraseña.
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="text-center">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+{% endblock %}

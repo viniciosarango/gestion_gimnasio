@@ -1,0 +1,43 @@
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Lista de Clientes Inactivos - Dorians Gym{% endblock %}
+
+{% block content %}
+    <h1 class="titulos_centrados">Lista de Clientes Inactivos</h1>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Cédula</th>
+                    <th>Nombre</th>
+                    <th>Apellido</th>
+                    <th>Correo</th>
+                    <th>Teléfono</th>
+                    <th>ID Membresía</th>
+                    <th>Ver Detalles</th>
+                    <th>Reactivar</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in clientes_inactivos %}
+                    <tr>
+                        <td>{{ cliente[0] }}</td>
+                        <td>{{ cliente[1] }}</td>
+                        <td>{{ cliente[2] }}</td>
+                        <td>{{ cliente[3] }}</td>
+                        <td>{{ cliente[4] }}</td>
+                        <td>{{ cliente[5] }}</td>
+                        <td>{{ cliente[7] }}</td>
+                        <td>
+                            <a href="{{ url_for('datos_cliente', id_cliente=cliente[0]) }}" class="btn btn-primary btn-sm">Ver Detalles</a>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('reactivar_cliente', id_cliente=cliente[0]) }}" class="btn btn-success btn-sm">Reactivar</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}

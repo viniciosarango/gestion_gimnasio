@@ -1,0 +1,16 @@
+<!-- templates/error.html -->
+
+{% extends 'maestra.html' %}
+
+{% block titulo %}
+    Error
+{% endblock %}
+
+{% block contenido %}
+    <section class="section">
+        <div class="has-text-centered">
+            <h3 class="is-size-3">Ha ocurrido un error.</h3>
+            <p>{{ mensaje }}</p>
+        </div>
+    </section>
+{% endblock %}
