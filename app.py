@@ -2,8 +2,8 @@ import os
 from db.database import obtener_conexion
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
-from db.forms import LoginForm, AgregarClienteForm
-from db.controlador import autenticar_usuario, obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_cedula, buscar_cliente_por_id, buscar_clientes_por_termino, obtener_cliente_por_nombre_apellido, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db
+from db.forms import LoginForm, AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm
+from db.controlador import autenticar_usuario, obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_cedula, buscar_cliente_por_id, buscar_clientes_por_termino, obtener_cliente_por_nombre_apellido, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db
 from flask import jsonify
 
 
@@ -39,6 +39,71 @@ def index():
 @app.route('/pagina_principal')
 def pagina_principal():
     return render_template('pagina_principal.html')
+
+
+@app.route('/agregar_plan', methods=['GET', 'POST'])
+def agregar_plan():
+    form = AgregarPlanForm()
+
+    if form.validate_on_submit():
+        agregar_plan_db(
+            form.nombre_plan.data,
+            form.precio.data,
+            form.descripcion.data
+        )
+        flash('¡Plan agregado exitosamente!', 'success')
+        return redirect(url_for('planes_lista'))
+
+    return render_template('agregar_plan.html', form=form)
+
+
+from flask import flash
+
+@app.route('/actualizar_plan/<int:id_plan>', methods=['GET', 'POST'])
+def actualizar_plan(id_plan):
+    # Obtener el plan desde la base de datos
+    plan = obtener_plan_por_id(id_plan)
+    
+    # Verificar si el plan existe
+    if not plan:
+        flash('Plan no encontrado', 'danger')
+        return redirect(url_for('planes_lista'))
+
+    # Crear el formulario y establecer los valores del plan en los campos
+    form = ActualizarPlanForm()
+
+    # Verificar si el formulario se ha enviado y es válido
+    if form.validate_on_submit():
+        # Actualizar el plan en la base de datos
+        actualizar_plan_en_db(id_plan, form.nombre_plan.data, form.precio.data, form.descripcion.data)
+        
+        # Redireccionar a la lista de planes
+        flash('Plan actualizado exitosamente', 'success')
+        return redirect(url_for('planes_lista'))
+    
+    # Llenar el formulario con los datos actuales del plan
+    form.nombre_plan.data = plan['nombre_plan']
+    form.precio.data = plan['precio']
+    form.descripcion.data = plan['descripcion']
+
+    return render_template('actualizar_plan.html', form=form, plan=plan)
+
+
+
+@app.route('/eliminar_plan/<int:id_plan>')
+def eliminar_plan(id_plan):
+    # Eliminar el plan en la base de datos
+    eliminar_plan_en_db(id_plan)
+
+    # Redireccionar a la lista de planes
+    return redirect(url_for('planes_lista'))
+
+
+
+@app.route('/planes_lista')
+def planes_lista():
+    planes = obtener_planes_desde_db()
+    return render_template('planes_lista.html', planes=planes)
 
 
 

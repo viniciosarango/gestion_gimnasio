@@ -205,6 +205,114 @@ def obtener_cliente_por_nombre_apellido(nombre, apellido):
         print(f"Error al obtener cliente por nombre y apellido: {error}")
     return None
 
+# Función para agregar plan a la base de datos
+def agregar_plan_db(nombre, precio, descripcion):
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO planes (nombre_plan, precio, descripcion)
+            VALUES (%s, %s, %s)
+            """,
+            (nombre, precio, descripcion)
+        )
+
+        conn.commit()
+    except Exception as e:
+        print(f"Error al agregar plan a la base de datos: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+def obtener_plan_por_id(id_plan):
+    plan = None
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT id_plan, nombre_plan, precio, descripcion FROM planes WHERE id_plan = %s", (id_plan,))
+        plan_data = cursor.fetchone()
+
+        if plan_data:
+            # Crear un objeto con atributos
+            plan = {
+                'id_plan': plan_data[0],
+                'nombre_plan': plan_data[1],
+                'precio': plan_data[2],
+                'descripcion': plan_data[3]
+            }
+
+    except Exception as e:
+        print(f"Error al obtener el plan desde la base de datos: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+    return plan
+
+
+
+def actualizar_plan_en_db(id_plan, nombre_plan, precio, descripcion):
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE planes
+            SET nombre_plan = %s, precio = %s, descripcion = %s
+            WHERE id_plan = %s
+            """,
+            (nombre_plan, precio, descripcion, id_plan)
+        )
+
+        conn.commit()
+    except Exception as e:
+        print(f"Error al actualizar el plan en la base de datos: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+
+def eliminar_plan_en_db(id_plan):
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute("DELETE FROM planes WHERE id_plan = %s", (id_plan,))
+        
+        conn.commit()
+        flash('Plan eliminado exitosamente', 'success')
+    except Exception as e:
+        print(f"Error al eliminar plan de la base de datos: {e}")
+        flash('Error al eliminar plan', 'danger')
+    finally:
+        if conn:
+            conn.close()
+
+
+def obtener_planes_desde_db():
+    planes = []
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute("SELECT id_plan, nombre_plan, precio, descripcion FROM planes")
+        planes = cursor.fetchall()
+        
+
+    except Exception as e:
+        print(f"Error al obtener planes desde la base de datos: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+    return planes
+
+
+
 
 
 def requerir_rol(rol):

@@ -1,0 +1,37 @@
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Lista de Planes - Dorians Gym{% endblock %}
+
+{% block content %}
+    <h1 class="titulos_centrados">Lista de Planes</h1>
+    <div class="d-flex justify-content-end mb-3">
+        <a href="{{ url_for('agregar_plan') }}" class="btn btn-success">Agregar Plan</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre del Plan</th>
+                    <th>Precio</th>
+                    <th>Descripción</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for plan in planes %}
+                    <tr>
+                        <td>{{ plan[0] }}</td>
+                        <td>{{ plan[1] }}</td>
+                        <td>{{ plan[2] }}</td>
+                        <td>{{ plan[3] }}</td>
+                        <td>
+                            <a href="{{ url_for('actualizar_plan', id_plan=plan[0]) }}" class="btn btn-warning btn-sm">Actualizar</a>
+                            <a href="{{ url_for('eliminar_plan', id_plan=plan[0]) }}" class="btn btn-danger btn-sm">Eliminar</a>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+{% endblock %}
