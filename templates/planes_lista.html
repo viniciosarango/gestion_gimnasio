@@ -11,20 +11,22 @@
         <table class="table table-striped">
             <thead>
                 <tr>
-                    <th>ID</th>
+                    
                     <th>Nombre del Plan</th>
                     <th>Precio</th>
                     <th>Descripción</th>
+                    <th>Duracion</th>
                     <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for plan in planes %}
                     <tr>
-                        <td>{{ plan[0] }}</td>
+                        
                         <td>{{ plan[1] }}</td>
                         <td>{{ plan[2] }}</td>
                         <td>{{ plan[3] }}</td>
+                        <td>{{ plan[4] }}</td>
                         <td>
                             <a href="{{ url_for('actualizar_plan', id_plan=plan[0]) }}" class="btn btn-warning btn-sm">Actualizar</a>
                             <a href="{{ url_for('eliminar_plan', id_plan=plan[0]) }}" class="btn btn-danger btn-sm">Eliminar</a>

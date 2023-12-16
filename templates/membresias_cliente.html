@@ -1,0 +1,36 @@
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Membresías del Cliente - Dorians Gym{% endblock %}
+
+{% block content %}
+    <div class="container mt-4">
+        <h1 class="mb-4">Membresías del Cliente: {{ cliente.nombre }} {{ cliente.apellido }}</h1>
+
+        <div class="row">
+            <div class="col-md-12">
+                <table class="table table-bordered table-striped">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>ID de Membresía</th>
+                            <th>Nombre del Plan</th>
+                            
+                            <th>Fecha de Inicio</th>
+                            <th>Fecha Final</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for membresia in membresias %}
+                            <tr>
+                                <td>{{ membresia.id_membresia }}</td>
+                                <td>{{ nombres_planes.get(membresia.id_plan) }}</td>
+                                
+                                <td>{{ membresia.fecha_inicio }}</td>
+                                <td>{{ membresia.fecha_final }}</td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+{% endblock %}

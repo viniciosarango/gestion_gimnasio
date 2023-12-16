@@ -5,9 +5,18 @@
 {% block content %}
     
     <h1 class="titulos_centrados">Lista de Clientes</h1>
+    
+    <form method="GET" action="{{ url_for('lista_clientes') }}" class="mb-3">
+        <div class="input-group">
+            <input type="text" class="form-control" name="search" placeholder="Buscar por nombre, apellido o cédula" value="{{ request.args.get('search', '') }}">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </div>
+    </form>
+
     <div class="d-flex justify-content-end mb-3">
         <a href="{{ url_for('agregar_cliente') }}" class="btn btn-success">Añadir Cliente</a>
     </div>
+    
     <div class="table-responsive">
         <table class="table table-striped">
             <thead>

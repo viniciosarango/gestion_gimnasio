@@ -1,0 +1,52 @@
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Gestión de Membresías - Dorians Gym{% endblock %}
+
+{% block content %}
+    <h1 class="titulos_centrados">Gestión de Membresías</h1>
+
+
+    <!-- Formulario de búsqueda -->
+    <h2>Buscar Clientes</h2>
+    <form method="post" enctype="multipart/form-data">
+        <div class="mb-3">
+            
+            <input type="text" class="form-control" id="criterio" name="criterio" placeholder="Bucar por nombre, apellido o cédula">
+        </div>
+        <div class="mb-3 text-center">
+            <button type="submit" class="btn btn-primary">Buscar</button>
+        </div>
+    </form>
+
+    <!-- Mostrar resultados de búsqueda -->
+    {% if resultados %}
+        
+        <div class="table-responsive">
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Apellido</th>
+                        <th>Cédula</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for cliente in resultados %}
+                        <tr>
+                            <td>{{ cliente[0] }}</td>
+                            <td>{{ cliente[1] }}</td>
+                            <td>{{ cliente[2] }}</td>
+                            <td>{{ cliente[3] }}</td>
+                            <!-- Agregar un enlace para asignar membresía -->
+                            <td><a href="{{ url_for('asignar_membresia', id_cliente=cliente[0]) }}" class="btn btn-success btn-sm">Asignar Membresía</a></td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% else %}
+        <p>No se encontraron resultados.</p>
+    {% endif %}
+{% endblock %}

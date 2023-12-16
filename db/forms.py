@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, FloatField, TextAreaField, PasswordField, SubmitField, FileField, SelectField, HiddenField
+from wtforms import StringField, FloatField, TextAreaField, PasswordField, SubmitField, FileField, SelectField, HiddenField, IntegerField
 from wtforms.validators import DataRequired, Email, Length, NumberRange
 
 class LoginForm(FlaskForm):
@@ -21,11 +21,13 @@ class AgregarPlanForm(FlaskForm):
     nombre_plan = StringField('Nombre del Plan', validators=[DataRequired()])
     precio = FloatField('Precio', validators=[DataRequired(), NumberRange(min=0)])
     descripcion = TextAreaField('Descripción')
+    num_dias = IntegerField('Duración en días', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Agregar Plan')
 
 class ActualizarPlanForm(FlaskForm):
     nombre_plan = StringField('Nombre del Plan', validators=[DataRequired()])
     precio = FloatField('Precio', validators=[DataRequired(), NumberRange(min=0)])
     descripcion = TextAreaField('Descripción')
+    num_dias = IntegerField('Duración en días', validators=[DataRequired(), NumberRange(min=1)])
     submit = SubmitField('Actualizar Plan')
 

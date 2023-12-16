@@ -48,11 +48,9 @@
                     </li>
 
                     <li class="nav-item">
-                        <a class="nav-link" href="#">MEMBRESIAS</a>
+                        <a class="nav-link" href="{{ url_for('buscar_clientes_form') }}">MEMBRESIAS</a>
                     </li>
-                    <li class="nav-item">
-                        <a class="nav-link" href="#">ASISTENCIAS</a>
-                    </li>
+                    
                     <li class="nav-item">
                         <a class="nav-link" href="{{ url_for('login') }}">SALIR</a>
                     </li>
@@ -70,7 +68,7 @@
                     <ul class="nav flex-column">
                         <li class="nav-item">
                             <a class="nav-link text-orange" href="{{ url_for('lista_clientes') }}">
-                                GESTION DE CLIENTES
+                                CLIENTES
                             </a>
                         </li>
                         <li class="nav-item">
@@ -91,7 +89,7 @@
                         
                         <li class="nav-item">
                             <a class="nav-link text-orange" href="{{ url_for('planes_lista') }}">
-                                GESTION DE PLANES
+                                PLANES
                             </a>
                         </li>
                         <li class="nav-item">
@@ -106,20 +104,23 @@
                         </li>
 
                         <li class="nav-item">
-                            <a class="nav-link text-orange" href="#">
-                                GESTION DE MEMBRESIAS
+                            <a class="nav-link text-orange" href="{{ url_for('buscar_clientes_form') }}">
+                                MEMBRESIAS
                             </a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link text-orange" href="#">
-                                GESTION DE ASISTENCIAS
+                            <a class="nav-link text-orange" href="{{ url_for('buscar_clientes_form') }}">
+                                Agregar membresía
                             </a>
                         </li>
+
                         <li class="nav-item">
-                            <a class="nav-link text-orange" href="#">
-                                SALIR
+                            <a class="nav-link text-orange" href="{{ url_for('todas_membresias') }}">
+                                Todas las membresias
                             </a>
                         </li>
+                        
+
                     </ul>
                 </div>
             </nav>

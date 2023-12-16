@@ -1,5 +1,6 @@
 import pymysql
 
+
 # Función para obtener la conexión a la base de datos
 def obtener_conexion():
     try:
@@ -13,3 +14,4 @@ def obtener_conexion():
     except pymysql.Error as error:
         print(f"Error al conectarse a la base de datos: {error}")
         return None
+
