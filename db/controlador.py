@@ -107,20 +107,21 @@ def obtener_duracion_plan_por_id(id_plan):
             conn.close()
     return None
 
-# En controlador.py
-def obtener_nombre_plan(id_planes):
+
+def obtener_nombres_y_precios_planes(id_planes):
     try:
         conn = obtener_conexion()
         with conn.cursor() as cursor:
-            # Utiliza IN para obtener información de múltiples planes
-            cursor.execute("SELECT id_plan, nombre_plan FROM planes WHERE id_plan IN %s", (tuple(id_planes),))
+            cursor.execute("""
+                SELECT id_plan, nombre_plan, precio
+                FROM planes
+                WHERE id_plan IN %s
+            """, (tuple(id_planes),))
             planes_data = cursor.fetchall()
-            # Crea un diccionario para mapear id_plan a nombre del plan
-            planes_dict = {plan[0]: plan[1] for plan in planes_data}
-            # Retorna el diccionario resultante
+            planes_dict = {plan[0]: {'nombre': plan[1], 'precio': plan[2]} for plan in planes_data}
             return planes_dict
     except Exception as e:
-        print(f"Error al obtener los nombres de los planes: {e}")
+        print(f"Error al obtener los nombres y precios de los planes: {e}")
         return {}
     finally:
         if conn:
@@ -128,12 +129,10 @@ def obtener_nombre_plan(id_planes):
 
 
 
-def crear_membresia(id_cliente, id_plan):
+def crear_membresia(id_cliente, id_plan, fecha_inicio):
     conn = obtener_conexion()
     try:
         with conn.cursor() as cursor:
-            # Lógica para obtener fecha_inicio y duracion_en_dias según el plan
-            fecha_inicio = datetime.utcnow()
             
             # Obtén la duración en días del plan desde la base de datos
             duracion_en_dias = obtener_duracion_plan_por_id(id_plan)
@@ -154,8 +153,13 @@ def crear_membresia(id_cliente, id_plan):
 
 
 def calcular_fecha_final(fecha_inicio, duracion_en_dias):
-    
+    # Convertir fecha_inicio a datetime
+    if not isinstance(fecha_inicio, datetime):
+        fecha_inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d")
+
+    # Calcular fecha_final
     fecha_final = fecha_inicio + timedelta(days=duracion_en_dias)
+    
     return fecha_final
 
 

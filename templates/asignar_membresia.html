@@ -4,31 +4,40 @@
 
 {% block content %}
     <h1 class="titulos_centrados">Asignar Membresía</h1>
-    <h2 class="mb-3">{{ cliente.nombre }} {{ cliente.apellido }}</h2>
 
-    <!-- Mostrar información del cliente -->
-    <div class="mb-3">
-        <strong>Cédula:</strong> {{ cliente.cedula }}<br>
-        <strong>Correo:</strong> {{ cliente.correo }}<br>
-        <!-- Agregar más información si es necesario -->
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-6">
+                <h2 class="mb-3">{{ cliente.nombre }} {{ cliente.apellido }}</h2>
+
+                <!-- Mostrar información del cliente -->
+                <div class="mb-3">
+                    <strong>Cédula:</strong> {{ cliente.cedula }}<br>
+                    <strong>Correo:</strong> {{ cliente.correo }}<br>
+                    <!-- Agregar más información si es necesario -->
+                </div>
+
+                <!-- Formulario para asignar membresía -->
+                <form method="post">
+                    <div class="mb-3">
+                        <label for="id_plan" class="form-label">Seleccionar Plan:</label>
+                        <select class="form-select" id="id_plan" name="id_plan" required>
+                            {% for plan in planes %}
+                                <option value="{{ plan[0] }}">{{ plan[1] }} - {{ plan[3] }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="fecha_inicio" class="form-label">Fecha de Inicio:</label>
+                        <input type="date" class="form-control" id="fecha_inicio" name="fecha_inicio" required>
+                    </div>
+
+                    <div class="mb-3 text-center">
+                        <button type="submit" class="btn btn-primary">Asignar Membresía</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
-
-    <!-- Formulario para asignar membresía -->
-    <form method="post">
-        <div class="mb-3">
-            
-            <label for="id_plan" class="form-label">Seleccionar Plan:</label>
-            
-            <select class="form-select" id="id_plan" name="id_plan" required>
-                {% for plan in planes %}
-                    <option value="{{ plan[0] }}">{{ plan[1] }} - {{ plan[3] }}</option>
-                {% endfor %}
-            </select>
-        
-        </div>
-
-        <div class="mb-3 text-center">
-            <button type="submit" class="btn btn-primary">Asignar Membresía</button>
-        </div>
-    </form>
 {% endblock %}

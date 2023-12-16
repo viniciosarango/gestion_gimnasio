@@ -16,16 +16,17 @@
                             
                             <th>Fecha de Inicio</th>
                             <th>Fecha Final</th>
+                            <th>Precio del Plan</th>
                         </tr>
                     </thead>
                     <tbody>
                         {% for membresia in membresias %}
                             <tr>
                                 <td>{{ membresia.id_membresia }}</td>
-                                <td>{{ nombres_planes.get(membresia.id_plan) }}</td>
-                                
+                                <td>{{ nombres_y_precios_planes.get(membresia.id_plan).get('nombre') }}</td>
                                 <td>{{ membresia.fecha_inicio }}</td>
                                 <td>{{ membresia.fecha_final }}</td>
+                                <td>{{ nombres_y_precios_planes[membresia.id_plan].get('precio') }}</td>
                             </tr>
                         {% endfor %}
                     </tbody>

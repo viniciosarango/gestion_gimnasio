@@ -3,7 +3,7 @@ from db.database import obtener_conexion
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
 from db.forms import LoginForm, AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm
-from db.controlador import autenticar_usuario, obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_nombre_plan, obtener_ultimos_clientes
+from db.controlador import autenticar_usuario, obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes
 from flask import jsonify
 
 
@@ -62,7 +62,8 @@ def asignar_membresia(id_cliente):
 
     if request.method == 'POST':
         id_plan = request.form.get('id_plan')
-        crear_membresia(id_cliente, id_plan)
+        fecha_inicio = request.form.get('fecha_inicio')
+        crear_membresia(id_cliente, id_plan, fecha_inicio)
         flash('Membresía asignada correctamente', 'success')
         return redirect(url_for('membresias_cliente', id_cliente=id_cliente))
 
@@ -74,22 +75,19 @@ def asignar_membresia(id_cliente):
 def membresias_cliente(id_cliente):
     cliente = buscar_cliente_por_id(id_cliente)
     membresias = obtener_membresias_cliente(id_cliente)
-    
-    print('print en app.py membresias encontradas', membresias)
 
     if not membresias:
+        print('print en app, no se encontraron membresias')
         flash('No se encontraron membresías para el cliente', 'warning')
-        print('No se encontraron membresías para el cliente')
         return redirect(url_for('lista_clientes'))
-    
+
     # Obtén una lista de id_plan desde todas las membresías
     id_planes = [membresia.id_plan for membresia in membresias]
 
-    # Obtén el diccionario de nombres de los planes
-    nombres_planes = obtener_nombre_plan(id_planes)
-    print('print en app', nombres_planes)
+    # Obtén el diccionario de nombres y precios de los planes
+    nombres_y_precios_planes = obtener_nombres_y_precios_planes(id_planes)
 
-    return render_template('membresias_cliente.html', cliente=cliente, membresias=membresias, nombres_planes=nombres_planes)
+    return render_template('membresias_cliente.html', cliente=cliente, membresias=membresias, nombres_y_precios_planes=nombres_y_precios_planes)
 
 
 # En app.py
@@ -103,14 +101,16 @@ def todas_membresias():
     
     membresias_extendidas = []
 
+    id_planes = [membresia.id_plan for membresia in membresias]
+
+    # Obtener el diccionario de nombres y precios de los planes
+    nombres_precios_planes = obtener_nombres_y_precios_planes(id_planes)
+
     for membresia in membresias:
         cliente = buscar_cliente_por_id(membresia.id_cliente)
         nombre_cliente = f"{cliente['nombre']} {cliente['apellido']}" if cliente else "Cliente no encontrado"
 
-        # Cambia membresia.id_plan a una lista con un solo elemento [membresia.id_plan]
-        nombres_planes = obtener_nombre_plan([membresia.id_plan])
-
-        # Añade la información extendida a la lista
+        # Añadir la información extendida a la lista
         membresias_extendidas.append({
             'id_membresia': membresia.id_membresia,
             'fecha_inicio': membresia.fecha_inicio,
@@ -118,7 +118,8 @@ def todas_membresias():
             'id_cliente': membresia.id_cliente,
             'nombre_cliente': nombre_cliente,
             'id_plan': membresia.id_plan,
-            'nombre_plan': nombres_planes.get(membresia.id_plan, "Plan no encontrado")
+            'nombre_plan': nombres_precios_planes.get(membresia.id_plan, {}).get('nombre', "Plan no encontrado"),
+            'precio_plan': nombres_precios_planes.get(membresia.id_plan, {}).get('precio', "Precio no encontrado")
         })
 
     return render_template('todas_membresias.html', membresias=membresias_extendidas)

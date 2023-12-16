@@ -30,6 +30,7 @@
                         <th>Apellido</th>
                         <th>Cédula</th>
                         <th>Acciones</th>
+                        <th>Ver Membresías</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -41,6 +42,7 @@
                             <td>{{ cliente[3] }}</td>
                             <!-- Agregar un enlace para asignar membresía -->
                             <td><a href="{{ url_for('asignar_membresia', id_cliente=cliente[0]) }}" class="btn btn-success btn-sm">Asignar Membresía</a></td>
+                            <td><a href="{{ url_for('membresias_cliente', id_cliente=cliente[0]) }}" class="btn btn-info btn-sm">Ver Membresías</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>
