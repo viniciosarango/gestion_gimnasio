@@ -1,34 +1,25 @@
 import os
+from flask_login import login_required, LoginManager, login_user, logout_user, current_user
 from db.database import obtener_conexion
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
-from db.forms import LoginForm, AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm
-from db.controlador import autenticar_usuario, obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes
+from db.forms import AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm, LoginForm
+from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_membresia_por_id, actualizar_membresia
 from flask import jsonify
 
 
+
 app = Flask(__name__)
+
 app.config['SECRET_KEY'] = '123456789'
+
+
+
 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    form = LoginForm()
 
-    if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password']
-        if autenticar_usuario(username, password):
-            session['usuario_autenticado'] = True
-            session['username'] = username
-            return redirect(url_for('pagina_principal'))
 
-        error_message = 'Credenciales no válidas. Inténtalo de nuevo.'
-        return render_template('login.html', error_message=error_message)
-    return render_template('login.html', form=form)
-
-# Redirigir la ruta raíz '/' al login
 @app.route('/')
 def index():
     return redirect(url_for('login'))
@@ -54,6 +45,24 @@ def crear_membresia_route():
         return jsonify({'mensaje': 'Membresía creada exitosamente'}), 201
     except Exception as e:
         return jsonify({'error': f'Error al crear membresía: {str(e)}'}), 500
+
+
+@app.route('/editar_membresia/<int:id_membresia>', methods=['GET', 'POST'])
+def editar_membresia(id_membresia):
+    membresia = obtener_membresia_por_id(id_membresia)
+    if not membresia:
+        flash('No se encontró la membresía', 'warning')
+        return redirect(url_for('index'))
+
+    if request.method == 'POST':
+        nueva_fecha_inicio = request.form.get('nueva_fecha_inicio')
+        nuevo_id_plan = request.form.get('nuevo_id_plan')
+        actualizar_membresia(id_membresia, nueva_fecha_inicio, nuevo_id_plan)
+        flash('Membresía editada correctamente', 'success')
+        return redirect(url_for('membresias_cliente', id_cliente=membresia.id_cliente))
+    planes = obtener_planes_desde_db()
+    return render_template('editar_membresia.html', membresia=membresia, planes=planes)
+
 
 
 @app.route('/asignar_membresia/<int:id_cliente>', methods=['GET', 'POST'])
@@ -187,12 +196,6 @@ def planes_lista():
     planes = obtener_planes_desde_db()
     return render_template('planes_lista.html', planes=planes)
 
-'''
-@app.route('/buscar_clientes/<termino>')
-def buscar_clientes(termino):
-    clientes = buscar_clientes_por_termino(termino)
-    return jsonify(clientes)
-'''
 
 @app.route('/gestion_membresias', methods=['GET', 'POST'])
 def buscar_clientes_form():

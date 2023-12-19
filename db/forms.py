@@ -1,10 +1,12 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, FloatField, TextAreaField, PasswordField, SubmitField, FileField, SelectField, HiddenField, IntegerField
 from wtforms.validators import DataRequired, Email, Length, NumberRange
+from wtforms import validators
+
 
 class LoginForm(FlaskForm):
-    username = StringField('Nombre de Usuario', validators=[DataRequired()])
-    password = PasswordField('Contraseña', validators=[DataRequired()])
+    username = StringField('Usuario', [validators.DataRequired()])
+    password = PasswordField('Contraseña', [validators.DataRequired()])
     submit = SubmitField('Iniciar Sesión')
 
 class AgregarClienteForm(FlaskForm):

@@ -7,29 +7,12 @@ from functools import wraps
 import base64
 from datetime import datetime
 from datetime import timedelta
-from db.models import Membresia
+from db.models import Membresia, Usuario
+from flask_login import login_required
+from werkzeug.security import check_password_hash
+import traceback
 
 
-
-
-def autenticar_usuario(username, password):
-    query = "SELECT * FROM usuario WHERE username = %s AND password = %s"
-
-    try:
-        conn = obtener_conexion()
-        with conn.cursor() as cursor:
-            cursor.execute(query, (username, password))
-            result = cursor.fetchone()
-
-        return result is not None
-
-    except pymysql.Error as error:
-        print(f"Error al autenticar usuario: {error}")
-        return False
-
-    finally:
-        if conn:
-            conn.close()
 
 
 # Función para agregar cliente a la base de datos
@@ -134,7 +117,7 @@ def crear_membresia(id_cliente, id_plan, fecha_inicio):
     try:
         with conn.cursor() as cursor:
             
-            # Obtén la duración en días del plan desde la base de datos
+            # Duración en días del plan desde la base de datos
             duracion_en_dias = obtener_duracion_plan_por_id(id_plan)
             
             # Calcular fecha_final usando la función
@@ -150,6 +133,44 @@ def crear_membresia(id_cliente, id_plan, fecha_inicio):
         print(f"Error al crear membresía: {error}")
     finally:
         conn.close()
+
+
+def actualizar_membresia(id_membresia, nueva_fecha_inicio, nuevo_id_plan):
+    try:
+        conn = obtener_conexion()
+        with conn.cursor() as cursor:
+            cursor.execute("""
+                UPDATE membresia
+                SET fecha_inicio = %s, id_plan = %s
+                WHERE id_membresia = %s
+            """, (nueva_fecha_inicio, nuevo_id_plan, id_membresia))
+            conn.commit()
+            nueva_fecha_inicio = datetime.strptime(nueva_fecha_inicio, "%Y-%m-%d").replace(hour=0, minute=0, second=0)
+            print(f"Membresía {id_membresia} actualizada exitosamente.")
+            
+            return redirect(url_for('membresias_cliente', id_cliente=id_membresia))
+
+    except pymysql.Error as error:
+        print(f"Error al actualizar membresía: {error}")
+    finally:
+        if conn:
+            conn.close()
+
+
+def obtener_membresia_por_id(id_membresia):
+    try:
+        membresia = Membresia.obtener_membresia_por_id(id_membresia)
+
+        if not membresia:
+            flash('No se encontró la membresía', 'warning')
+            return redirect(url_for('index'))
+
+        planes = obtener_planes_desde_db()
+
+        return render_template('editar_membresia.html', membresia=membresia, planes=planes)
+    except Exception as e:
+        print(f"Error al obtener la membresía por ID: {e}")
+        raise  # Propaga la excepción para obtener más detalles en la consola
 
 
 def calcular_fecha_final(fecha_inicio, duracion_en_dias):
@@ -310,21 +331,6 @@ def reactivar_cliente_db(id_cliente):
 
 
 
-'''
-# En tu función buscar_clientes_por_termino en controlador.py
-def buscar_clientes_por_termino(termino):
-    try:
-        with obtener_conexion().cursor() as cursor:
-            cursor.execute(
-                "SELECT nombre, apellido, cedula, telefono FROM cliente WHERE nombre LIKE %s OR apellido LIKE %s LIMIT 10",
-                (f"%{termino}%", f"%{termino}%")
-            )
-            clientes = cursor.fetchall()
-            return [{'nombre': cliente[0], 'apellido': cliente[1], 'cedula': cliente[2], 'telefono': cliente[3]} for cliente in clientes]
-    except Exception as error:
-        print(f"Error al buscar clientes por término: {error}")
-        return []
-'''
 
 def obtener_cliente_por_nombre_apellido(nombre, apellido):
     try:
@@ -449,10 +455,7 @@ def obtener_planes_desde_db():
 
     return planes
 
-
-
-
-
+'''
 def requerir_rol(rol):
     def decorador(func):
         @wraps(func)
@@ -462,3 +465,4 @@ def requerir_rol(rol):
             return func(*args, **kwargs)
         return wrapper
     return decorador
+'''

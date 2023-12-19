@@ -1,6 +1,11 @@
 import pymysql
 from datetime import datetime, timedelta
 from db.database import obtener_conexion
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
+
+
+
 
 class Membresia:
     def __init__(self, id_membresia, fecha_inicio, fecha_final, id_cliente, id_plan, precio_plan):
@@ -64,5 +69,26 @@ class Membresia:
                 conn.close()
 
 
+    @classmethod
+    def obtener_membresia_por_id(cls, id_membresia):
+        try:
+            conn = obtener_conexion()
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT * FROM membresia
+                    WHERE id_membresia = %s
+                """, (id_membresia,))
+                membresia_data = cursor.fetchone()
+                if membresia_data:
+                    membresia = cls(*membresia_data)
+                    return membresia
+                else:
+                    return None
+        except Exception as e:
+            print(f"Error al obtener la membresía por ID: {e}")
+            return None
+        finally:
+            if conn:
+                conn.close()
 
 

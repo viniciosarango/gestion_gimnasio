@@ -34,6 +34,11 @@
                             {{ form.submit(class="btn btn-primary") }}
                         </div>
                     </form>
+                    
+                    {% if error_message %}
+                    <p style="color: red;">{{ error_message }}</p>
+                    {% endif %}
+
                 </div>
             </div>
         </div>
