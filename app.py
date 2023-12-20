@@ -1,18 +1,71 @@
 import os
-from flask_login import login_required, LoginManager, login_user, logout_user, current_user
+from flask_login import login_required, LoginManager, login_user, logout_user, current_user, UserMixin
 from db.database import obtener_conexion
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
 from db.forms import AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm, LoginForm
-from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_membresia_por_id, actualizar_membresia
+from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_membresia_por_id, actualizar_membresia, generate_password, obtener_id_cliente_por_usuario, eliminar_cliente_db
 from flask import jsonify
+from flask_sqlalchemy import SQLAlchemy
+from db.models import db, Usuario
+
 
 
 
 app = Flask(__name__)
-
 app.config['SECRET_KEY'] = '123456789'
+app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://root:@localhost/dorians_gym'  
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False 
 
+db.init_app(app)
+
+login_manager = LoginManager(app)
+login_manager.login_view = 'login'
+
+@login_manager.user_loader
+def load_user(user_id):
+    return Usuario.query.get(int(user_id))
+
+
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    form = LoginForm()
+
+    if form.validate_on_submit():
+        username = form.username.data
+        password = form.password.data
+
+        user = Usuario.query.filter_by(username=username, password=password).first()
+
+        if user:            
+            session['user_id'] = user.id_usuario
+            session['user_role'] = user.role
+
+            flash('Inicio de sesión exitoso', 'success')
+
+            # Obtener el id_cliente correspondiente al user_id
+            id_cliente = obtener_id_cliente_por_usuario(session['user_id'])
+            return redirect(url_for('datos_cliente', id_cliente=id_cliente))
+        else:
+            flash('Usuario o contraseña incorrectos', 'danger')
+
+    return render_template('login.html', form=form)
+
+@app.route('/datos_usuario')
+def datos_usuario():
+    
+    if 'user_id' not in session:
+        flash('Inicia sesión para ver tus datos.', 'danger')
+        return redirect(url_for('login'))
+    
+    user_id = session['user_id']
+    usuario = Usuario.query.get(user_id)
+
+    if usuario:
+        return render_template('datos_usuario.html', usuario=usuario)
+    else:
+        flash('Usuario no encontrado.', 'danger')
+        return redirect(url_for('pagina_principal'))
 
 
 
@@ -278,8 +331,12 @@ def agregar_cliente():
         else:
             filename = None
 
+        # Generar nombre de usuario y contraseña provisional (puedes ajustarlo según tus requerimientos)
+        username = f"cliente_{nombre}_{apellido}"
+        password = generate_password()
+
         # Llamada a la función para agregar el cliente en la base de datos
-        agregar_cliente_db(cedula, nombre, apellido, correo, telefono, filename)
+        agregar_cliente_db(cedula, nombre, apellido, correo, telefono, filename, "username_cliente", "password_cliente")
 
         return redirect(url_for('lista_clientes'))
 
@@ -323,6 +380,14 @@ def actualizar_cliente(id_cliente):
     form.telefono.data = cliente.get('telefono', '')
 
     return render_template('actualizar_cliente.html', form=form)
+
+
+
+@app.route('/eliminar_cliente/<int:id_cliente>')
+def eliminar_cliente(id_cliente):
+    eliminar_cliente_db(id_cliente)
+    return redirect(url_for('lista_clientes'))
+
 
 
 @app.route('/inactivar_cliente/<int:id_cliente>')

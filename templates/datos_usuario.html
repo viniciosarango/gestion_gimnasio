@@ -1,0 +1,19 @@
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Datos del Usuario - Dorians Gym{% endblock %}
+
+{% block content %}
+<div class="titulos_centrados">    
+    <h1>Datos del Usuario</h1>
+</div>
+<div class="contenedor">
+    <div class="usuario-tarjeta">
+        <div class="info-tarjeta">
+            <p><strong>ID:</strong> {{ usuario.id_usuario }}</p>
+            <p><strong>Username:</strong> {{ usuario.username }}</p>
+            <p><strong>Role:</strong> {{ usuario.role }}</p>
+            <!-- Agrega aquí los campos adicionales del usuario según tu modelo -->
+        </div>
+    </div>
+</div>
+{% endblock %}

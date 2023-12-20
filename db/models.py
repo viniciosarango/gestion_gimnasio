@@ -3,9 +3,19 @@ from datetime import datetime, timedelta
 from db.database import obtener_conexion
 from flask_login import UserMixin
 from werkzeug.security import generate_password_hash, check_password_hash
+from flask_sqlalchemy import SQLAlchemy
 
+db = SQLAlchemy()
 
+class Usuario(db.Model, UserMixin):
+    id_usuario = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(50), unique=True, nullable=False)
+    password = db.Column(db.String(255), nullable=False)
+    role = db.Column(db.Enum('admin', 'cliente'), nullable=False)
+    id_cliente = db.Column(db.Integer, db.ForeignKey('cliente.id_cliente'))
 
+    def __repr__(self):
+        return f"<Usuario {self.username}>"
 
 class Membresia:
     def __init__(self, id_membresia, fecha_inicio, fecha_final, id_cliente, id_plan, precio_plan):

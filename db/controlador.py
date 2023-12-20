@@ -7,20 +7,19 @@ from functools import wraps
 import base64
 from datetime import datetime
 from datetime import timedelta
-from db.models import Membresia, Usuario
+from db.models import Membresia, Usuario, db
 from flask_login import login_required
 from werkzeug.security import check_password_hash
 import traceback
-
-
+import random
+import string
 
 
 # Función para agregar cliente a la base de datos
-def agregar_cliente_db(cedula, nombre, apellido, correo, telefono, foto_nombre):
+def agregar_cliente_db(cedula, nombre, apellido, correo, telefono, foto_nombre, username, password):
     try:
         conn = obtener_conexion()
-        cursor = conn.cursor()
-
+        cursor = conn.cursor()        
         cursor.execute(
             """
             INSERT INTO cliente (cedula, nombre, apellido, correo, telefono, foto_nombre, estado)
@@ -30,11 +29,26 @@ def agregar_cliente_db(cedula, nombre, apellido, correo, telefono, foto_nombre):
         )
 
         conn.commit()
+
+        cursor.execute("SELECT LAST_INSERT_ID()")
+        id_cliente = cursor.fetchone()[0]
+
+        cursor.execute(
+            """
+            INSERT INTO usuario (username, password, role, id_cliente)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (correo, cedula, 'cliente', id_cliente)
+        )
+
+        conn.commit()
+
     except Exception as e:
         print(f"Error al agregar cliente a la base de datos: {e}")
     finally:
         if conn:
             conn.close()
+
 
 
 # Función para actualizar los datos de un cliente en la base de datos (incluyendo la foto)
@@ -58,6 +72,91 @@ def actualizar_cliente_db(id_cliente, cedula, nombre, apellido, correo, telefono
     finally:
         if conn:
             conn.close()
+
+
+def eliminar_cliente_db(id_cliente):
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        # Eliminar las membresías asociadas al cliente
+        cursor.execute(
+            """
+            DELETE FROM membresia
+            WHERE id_cliente = %s
+            """,
+            (id_cliente,)
+        )
+
+        # Eliminar al usuario asociado al cliente
+        cursor.execute(
+            """
+            DELETE FROM usuario
+            WHERE id_cliente = %s
+            """,
+            (id_cliente,)
+        )
+
+        # Eliminar al cliente
+        cursor.execute(
+            """
+            DELETE FROM cliente
+            WHERE id_cliente = %s
+            """,
+            (id_cliente,)
+        )
+
+        conn.commit()
+        flash('Cliente eliminado exitosamente.', 'success')
+
+    except Exception as e:
+        print(f"Error al eliminar cliente de la base de datos: {e}")
+        flash('Error al eliminar cliente.', 'danger')
+
+    finally:
+        if conn:
+            conn.close()
+
+
+
+
+
+def obtener_id_cliente_por_usuario(user_id):
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()        
+        cursor.execute(
+            """
+            SELECT id_cliente FROM usuario
+            WHERE id_usuario = %s
+            """,
+            (user_id,)
+        )
+
+        id_cliente = cursor.fetchone()
+
+        if id_cliente:
+            return id_cliente[0]
+        else:
+            print(f"No se encontró el id_cliente para el user_id {user_id}")
+            return None
+
+    except Exception as e:
+        print(f"Error al obtener id_cliente por usuario: {e}")
+        return None
+    finally:
+        if conn:
+            conn.close()
+
+
+
+
+
+def generate_password(length=8):
+    characters = string.ascii_letters + string.digits + string.punctuation
+    return ''.join(random.choice(characters) for i in range(length))
+
+
 
 # Función para inactivar un cliente en la base de datos
 def inactivar_cliente_db(id_cliente):

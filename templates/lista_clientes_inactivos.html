@@ -17,6 +17,7 @@
                     <th>ID Membresía</th>
                     <th>Ver Detalles</th>
                     <th>Reactivar</th>
+                    <th>Eliminar</th>
                 </tr>
             </thead>
             <tbody>
@@ -34,6 +35,9 @@
                         </td>
                         <td>
                             <a href="{{ url_for('reactivar_cliente', id_cliente=cliente[0]) }}" class="btn btn-success btn-sm">Reactivar</a>
+                        </td>
+                        <td> 
+                            <a href="{{ url_for('eliminar_cliente', id_cliente=cliente[0]) }}" class="btn btn-danger btn-sm">Eliminar</a>
                         </td>
                     </tr>
                 {% endfor %}
