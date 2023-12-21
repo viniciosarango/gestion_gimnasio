@@ -1,0 +1,49 @@
+<!-- templates/registro_cliente.html -->
+{% extends 'formulario_base.html' %}
+
+{% block title %}Registro de Cliente - Dorians Gym{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-12"> <!-- Ajusté el valor aquí -->
+            
+                <form class="card p-4 shadow" method="post" method="POST" action="{{ url_for('registro_cliente') }}">
+                    {{ form.hidden_tag() }}
+                    <h1 class="h3 mb-3 font-weight-normal">Registro de Cliente</h1>
+
+                    <div class="mb-3">
+                        {{ form.cedula.label(class="form-label") }}
+                        {{ form.cedula(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.nombre.label(class="form-label") }}
+                        {{ form.nombre(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.apellido.label(class="form-label") }}
+                        {{ form.apellido(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.correo.label(class="form-label") }}
+                        {{ form.correo(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.telefono.label(class="form-label") }}
+                        {{ form.telefono(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.fecha_nacimiento.label(class="form-label") }}
+                        {{ form.fecha_nacimiento(class="form-control") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ form.password.label(class="form-label") }}
+                        {{ form.password(class="form-control") }}
+                    </div>
+                    <button type="submit" class="btn btn-lg btn-primary btn-block">Crear cuenta</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+{% endblock %}

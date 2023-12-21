@@ -10,6 +10,7 @@
         <table class="table table-striped">
             <thead>
                 <tr>
+                    <th>Id Membresia</th>
                     <th>Fecha de Inicio</th>
                     <th>ID de Cliente</th>
                     <th>Nombre de Cliente</th>
@@ -22,6 +23,7 @@
             <tbody>
                 {% for membresia in membresias %}
                     <tr>
+                        <td>{{ membresia.id_membresia }}</td>
                         <td>{{ membresia.fecha_inicio }}</td>
                         <td>{{ membresia.id_cliente }}</td>
                         <td>{{ membresia.nombre_cliente }}</td>

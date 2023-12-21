@@ -51,6 +51,14 @@
                     </div>
 
                     <div class="mb-3">
+                        {{ form.fecha_nacimiento.label(class="form-label") }}
+                        {{ form.fecha_nacimiento(class="form-control form-control-sm", required=True, type="date") }}
+                        <div class="invalid-feedback">
+                            Por favor, ingresa la fecha de nacimiento.
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
                         {{ form.foto.label(class="form-label") }}
                         {{ form.foto(class="form-control form-control-sm") }}
                     </div>

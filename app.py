@@ -3,11 +3,12 @@ from flask_login import login_required, LoginManager, login_user, logout_user, c
 from db.database import obtener_conexion
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
-from db.forms import AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm, LoginForm
-from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_membresia_por_id, actualizar_membresia, generate_password, obtener_id_cliente_por_usuario, eliminar_cliente_db
+from db.forms import AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm, LoginForm, RegistroClienteForm
+from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_id_cliente_por_usuario, eliminar_cliente_db, registrar_cliente
 from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
-from db.models import db, Usuario
+from db.models import db, Usuario, Membresia
+from datetime import datetime
 
 
 
@@ -68,6 +69,28 @@ def datos_usuario():
         return redirect(url_for('pagina_principal'))
 
 
+@app.route('/registro', methods=['GET', 'POST'])
+def registro_cliente():
+    form = RegistroClienteForm()
+
+    if form.validate_on_submit():
+        cedula = form.cedula.data
+        nombre = form.nombre.data
+        apellido = form.apellido.data
+        correo = form.correo.data
+        telefono = form.telefono.data
+        fecha_nacimiento = form.fecha_nacimiento.data          
+        password = form.password.data
+
+        # Modificamos el correo para ser utilizado como username
+        username = correo
+
+        registrar_cliente(cedula, nombre, apellido, correo, telefono, fecha_nacimiento, username, password)
+        return redirect(url_for('login'))
+
+    return render_template('registro_cliente.html', form=form)
+
+
 
 app.config['UPLOAD_FOLDER'] = 'static/uploads'
 
@@ -100,23 +123,6 @@ def crear_membresia_route():
         return jsonify({'error': f'Error al crear membresía: {str(e)}'}), 500
 
 
-@app.route('/editar_membresia/<int:id_membresia>', methods=['GET', 'POST'])
-def editar_membresia(id_membresia):
-    membresia = obtener_membresia_por_id(id_membresia)
-    if not membresia:
-        flash('No se encontró la membresía', 'warning')
-        return redirect(url_for('index'))
-
-    if request.method == 'POST':
-        nueva_fecha_inicio = request.form.get('nueva_fecha_inicio')
-        nuevo_id_plan = request.form.get('nuevo_id_plan')
-        actualizar_membresia(id_membresia, nueva_fecha_inicio, nuevo_id_plan)
-        flash('Membresía editada correctamente', 'success')
-        return redirect(url_for('membresias_cliente', id_cliente=membresia.id_cliente))
-    planes = obtener_planes_desde_db()
-    return render_template('editar_membresia.html', membresia=membresia, planes=planes)
-
-
 
 @app.route('/asignar_membresia/<int:id_cliente>', methods=['GET', 'POST'])
 def asignar_membresia(id_cliente):
@@ -142,17 +148,11 @@ def membresias_cliente(id_cliente):
         print('print en app, no se encontraron membresias')
         flash('No se encontraron membresías para el cliente', 'warning')
         return redirect(url_for('lista_clientes'))
-
-    # Obtén una lista de id_plan desde todas las membresías
     id_planes = [membresia.id_plan for membresia in membresias]
-
-    # Obtén el diccionario de nombres y precios de los planes
     nombres_y_precios_planes = obtener_nombres_y_precios_planes(id_planes)
-
     return render_template('membresias_cliente.html', cliente=cliente, membresias=membresias, nombres_y_precios_planes=nombres_y_precios_planes)
 
 
-# En app.py
 @app.route('/todas_membresias')
 def todas_membresias():
     membresias = obtener_todas_membresias()
@@ -163,16 +163,13 @@ def todas_membresias():
     
     membresias_extendidas = []
 
-    id_planes = [membresia.id_plan for membresia in membresias]
-
-    # Obtener el diccionario de nombres y precios de los planes
+    id_planes = [membresia.id_plan for membresia in membresias]    
     nombres_precios_planes = obtener_nombres_y_precios_planes(id_planes)
 
     for membresia in membresias:
         cliente = buscar_cliente_por_id(membresia.id_cliente)
         nombre_cliente = f"{cliente['nombre']} {cliente['apellido']}" if cliente else "Cliente no encontrado"
-
-        # Añadir la información extendida a la lista
+        
         membresias_extendidas.append({
             'id_membresia': membresia.id_membresia,
             'fecha_inicio': membresia.fecha_inicio,
@@ -292,7 +289,6 @@ def reactivar_cliente(id_cliente):
     return redirect(url_for('lista_clientes_inactivos'))
 
 
-
 @app.route('/datos_cliente/<int:id_cliente>')
 def datos_cliente(id_cliente):
     cliente = buscar_cliente_por_id(id_cliente)  
@@ -301,10 +297,8 @@ def datos_cliente(id_cliente):
         print(f"Cliente encontrado: {cliente}")
         return render_template('datos_cliente.html', cliente=cliente)
     else:
-        flash('Cliente no encontrado.', 'danger')
-        print("Cliente no encontrado.")
+        flash('Cliente no encontrado.', 'danger')        
         return redirect(url_for('lista_clientes'))
-
 
 
 
@@ -318,6 +312,7 @@ def agregar_cliente():
         apellido = form.apellido.data
         correo = form.correo.data
         telefono = form.telefono.data
+        fecha_nacimiento = form.fecha_nacimiento.data
 
         # Manejo de la carga de archivos (foto de perfil)
         if 'foto' in request.files:
@@ -330,17 +325,14 @@ def agregar_cliente():
                 filename = None
         else:
             filename = None
-
-        # Generar nombre de usuario y contraseña provisional (puedes ajustarlo según tus requerimientos)
-        username = f"cliente_{nombre}_{apellido}"
-        password = generate_password()
-
-        # Llamada a la función para agregar el cliente en la base de datos
-        agregar_cliente_db(cedula, nombre, apellido, correo, telefono, filename, "username_cliente", "password_cliente")
+        
+        agregar_cliente_db(cedula, nombre, apellido, correo, telefono, fecha_nacimiento, filename)
 
         return redirect(url_for('lista_clientes'))
 
     return render_template('agregar_cliente.html', form=form)
+
+
 
 
 @app.route('/actualizar_cliente/<int:id_cliente>', methods=['GET', 'POST'])
@@ -368,7 +360,16 @@ def actualizar_cliente(id_cliente):
             filename = None
 
         # Llamada a la función para actualizar el cliente en la base de datos
-        actualizar_cliente_db(id_cliente, form.cedula.data, form.nombre.data, form.apellido.data, form.correo.data, form.telefono.data, filename)
+        actualizar_cliente_db(
+            id_cliente,
+            form.cedula.data,
+            form.nombre.data,
+            form.apellido.data,
+            form.correo.data,
+            form.telefono.data,
+            form.fecha_nacimiento.data,  # Agregar la fecha de nacimiento
+            filename
+        )
 
         return redirect(url_for('lista_clientes'))
 
@@ -378,6 +379,10 @@ def actualizar_cliente(id_cliente):
     form.apellido.data = cliente.get('apellido', '')
     form.correo.data = cliente.get('correo', '')
     form.telefono.data = cliente.get('telefono', '')
+    
+    fecha_nacimiento = cliente.get('fecha_nacimiento')
+    if fecha_nacimiento is not None:
+        form.fecha_nacimiento.data = fecha_nacimiento
 
     return render_template('actualizar_cliente.html', form=form)
 

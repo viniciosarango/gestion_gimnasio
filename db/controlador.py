@@ -16,23 +16,27 @@ import string
 
 
 # Función para agregar cliente a la base de datos
-def agregar_cliente_db(cedula, nombre, apellido, correo, telefono, foto_nombre, username, password):
+def agregar_cliente_db(cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre):
     try:
         conn = obtener_conexion()
-        cursor = conn.cursor()        
+        cursor = conn.cursor()
+
+        # Insertar cliente en la tabla Cliente
         cursor.execute(
             """
-            INSERT INTO cliente (cedula, nombre, apellido, correo, telefono, foto_nombre, estado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            INSERT INTO cliente (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, estado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
-            (cedula, nombre, apellido, correo, telefono, foto_nombre, 1)
+            (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, 1)  # Estado activo al inicio
         )
 
         conn.commit()
 
+        # Obtener el id_cliente del cliente recién insertado
         cursor.execute("SELECT LAST_INSERT_ID()")
         id_cliente = cursor.fetchone()[0]
 
+        # Insertar usuario en la tabla Usuario asociado al cliente
         cursor.execute(
             """
             INSERT INTO usuario (username, password, role, id_cliente)
@@ -50,9 +54,8 @@ def agregar_cliente_db(cedula, nombre, apellido, correo, telefono, foto_nombre, 
             conn.close()
 
 
-
-# Función para actualizar los datos de un cliente en la base de datos (incluyendo la foto)
-def actualizar_cliente_db(id_cliente, cedula, nombre, apellido, correo, telefono, foto_nombre):
+# Función para actualizar los datos de un cliente en la base de datos (incluyendo la foto y la fecha de nacimiento)
+def actualizar_cliente_db(id_cliente, cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre):
     try:
         conn = obtener_conexion()
         cursor = conn.cursor()
@@ -60,10 +63,10 @@ def actualizar_cliente_db(id_cliente, cedula, nombre, apellido, correo, telefono
         cursor.execute(
             """
             UPDATE cliente
-            SET cedula = %s, nombre = %s, apellido = %s, correo = %s, telefono = %s, foto_nombre = %s
+            SET cedula = %s, nombre = %s, apellido = %s, correo = %s, telefono = %s, fecha_nacimiento = %s, foto_nombre = %s
             WHERE id_cliente = %s
             """,
-            (cedula, nombre, apellido, correo, telefono, foto_nombre, id_cliente)
+            (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, id_cliente)
         )
 
         conn.commit()
@@ -118,7 +121,42 @@ def eliminar_cliente_db(id_cliente):
             conn.close()
 
 
+def registrar_cliente(cedula, nombre, apellido, correo, telefono, fecha_nacimiento, username, password):
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
 
+        # Insertar cliente en la tabla Cliente
+        cursor.execute(
+            """
+            INSERT INTO cliente (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, estado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
+            (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, 0)  # Estado inactivo al inicio
+        )
+
+        conn.commit()
+
+        # Obtener el id_cliente del cliente recién insertado
+        cursor.execute("SELECT LAST_INSERT_ID()")
+        id_cliente = cursor.fetchone()[0]
+
+        # Insertar usuario en la tabla Usuario asociado al cliente
+        cursor.execute(
+            """
+            INSERT INTO usuario (username, password, role, id_cliente)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (username, password, 'cliente', id_cliente)
+        )
+
+        conn.commit()
+
+    except Exception as e:
+        print(f"Error al agregar cliente a la base de datos: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 
 def obtener_id_cliente_por_usuario(user_id):
@@ -147,15 +185,6 @@ def obtener_id_cliente_por_usuario(user_id):
     finally:
         if conn:
             conn.close()
-
-
-
-
-
-def generate_password(length=8):
-    characters = string.ascii_letters + string.digits + string.punctuation
-    return ''.join(random.choice(characters) for i in range(length))
-
 
 
 # Función para inactivar un cliente en la base de datos
@@ -190,6 +219,13 @@ def obtener_duracion_plan_por_id(id_plan):
     return None
 
 
+def calcular_fecha_final(fecha_inicio, duracion_en_dias): 
+    if not isinstance(fecha_inicio, datetime):
+        fecha_inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d")
+    fecha_final = fecha_inicio + timedelta(days=duracion_en_dias)
+    return fecha_final
+
+
 def obtener_nombres_y_precios_planes(id_planes):
     try:
         conn = obtener_conexion()
@@ -208,7 +244,6 @@ def obtener_nombres_y_precios_planes(id_planes):
     finally:
         if conn:
             conn.close()
-
 
 
 def crear_membresia(id_cliente, id_plan, fecha_inicio):
@@ -234,53 +269,8 @@ def crear_membresia(id_cliente, id_plan, fecha_inicio):
         conn.close()
 
 
-def actualizar_membresia(id_membresia, nueva_fecha_inicio, nuevo_id_plan):
-    try:
-        conn = obtener_conexion()
-        with conn.cursor() as cursor:
-            cursor.execute("""
-                UPDATE membresia
-                SET fecha_inicio = %s, id_plan = %s
-                WHERE id_membresia = %s
-            """, (nueva_fecha_inicio, nuevo_id_plan, id_membresia))
-            conn.commit()
-            nueva_fecha_inicio = datetime.strptime(nueva_fecha_inicio, "%Y-%m-%d").replace(hour=0, minute=0, second=0)
-            print(f"Membresía {id_membresia} actualizada exitosamente.")
-            
-            return redirect(url_for('membresias_cliente', id_cliente=id_membresia))
-
-    except pymysql.Error as error:
-        print(f"Error al actualizar membresía: {error}")
-    finally:
-        if conn:
-            conn.close()
 
 
-def obtener_membresia_por_id(id_membresia):
-    try:
-        membresia = Membresia.obtener_membresia_por_id(id_membresia)
-
-        if not membresia:
-            flash('No se encontró la membresía', 'warning')
-            return redirect(url_for('index'))
-
-        planes = obtener_planes_desde_db()
-
-        return render_template('editar_membresia.html', membresia=membresia, planes=planes)
-    except Exception as e:
-        print(f"Error al obtener la membresía por ID: {e}")
-        raise  # Propaga la excepción para obtener más detalles en la consola
-
-
-def calcular_fecha_final(fecha_inicio, duracion_en_dias):
-    # Convertir fecha_inicio a datetime
-    if not isinstance(fecha_inicio, datetime):
-        fecha_inicio = datetime.strptime(fecha_inicio, "%Y-%m-%d")
-
-    # Calcular fecha_final
-    fecha_final = fecha_inicio + timedelta(days=duracion_en_dias)
-    
-    return fecha_final
 
 
 def obtener_todas_membresias():
@@ -323,8 +313,6 @@ def buscar_cliente_por_criterio(criterio):
             conn.close()
 
 
-
-
 def buscar_cliente_por_cedula(cedula):
     try:
         with obtener_conexion().cursor() as cursor:
@@ -348,6 +336,7 @@ def buscar_cliente_por_id(id_cliente):
                 cliente_dict = dict(zip(column_names, cliente))  # Convertir a diccionario
                 
                 cliente_dict['nombre_cliente'] = f"{cliente_dict['nombre']} {cliente_dict['apellido']}"
+                cliente_dict['fecha_nacimiento'] = cliente_dict.get('fecha_nacimiento', 'Fecha no disponible')
 
                 if cliente_dict['foto_nombre']:
                     cliente_dict['foto_url'] = url_for('static', filename=f'uploads/{cliente_dict["foto_nombre"]}')
@@ -429,8 +418,6 @@ def reactivar_cliente_db(id_cliente):
             conn.close()
 
 
-
-
 def obtener_cliente_por_nombre_apellido(nombre, apellido):
     try:
         with obtener_conexion().cursor() as cursor:
@@ -467,7 +454,6 @@ def agregar_plan_db(nombre, precio, descripcion, num_dias):
             conn.close()
 
 
-
 def obtener_plan_por_id(id_plan):
     plan = None
     try:
@@ -494,7 +480,6 @@ def obtener_plan_por_id(id_plan):
             conn.close()
 
     return plan
-
 
 
 def actualizar_plan_en_db(id_plan, nombre_plan, precio, descripcion, num_dias):
@@ -554,14 +539,3 @@ def obtener_planes_desde_db():
 
     return planes
 
-'''
-def requerir_rol(rol):
-    def decorador(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            if 'usuario_autenticado' not in session or 'rol' not in session or session['rol'] != rol:
-                abort(403)  # Prohibido
-            return func(*args, **kwargs)
-        return wrapper
-    return decorador
-'''
