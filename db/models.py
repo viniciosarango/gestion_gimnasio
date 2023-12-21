@@ -21,13 +21,29 @@ class Usuario(db.Model, UserMixin):
         return f"<Usuario {self.username}>"
 
 class Membresia:
-    def __init__(self, id_membresia, fecha_inicio, fecha_final, id_cliente, id_plan, precio_plan):
+    def __init__(self, id_membresia, fecha_inicio, fecha_final, id_cliente, id_plan, precio_plan, nombre_cliente=None, nombre_plan=None):
         self.id_membresia = id_membresia
         self.fecha_inicio = fecha_inicio
         self.fecha_final = fecha_final
         self.id_cliente = id_cliente
         self.id_plan = id_plan
         self.precio_plan = precio_plan
+        self.nombre_cliente = nombre_cliente
+        self.nombre_plan = nombre_plan
+    
+    @staticmethod
+    def crear_instancia_membresia(fila):
+        return Membresia(
+            id_membresia=fila[0],
+            fecha_inicio=fila[1],
+            fecha_final=fila[2],
+            id_cliente=fila[3],
+            id_plan=fila[4],
+            precio_plan=fila[5],
+            nombre_cliente=fila[6],
+            nombre_plan=fila[7]
+        )
+
 
     @classmethod
     def from_dict(cls, membresia_dict):
@@ -81,4 +97,33 @@ class Membresia:
             if conn:
                 conn.close()
 
-    
+    @classmethod
+    def obtener_membresias_proximas_a_caducar(cls, dias=7):
+        try:
+            conn = obtener_conexion()
+            with conn.cursor() as cursor:
+                fecha_actual = datetime.now().strftime("%Y-%m-%d")
+
+                # Consulta para obtener membresías próximas a caducar con información del cliente y el plan
+                cursor.execute("""
+                    SELECT membresia.id_membresia, membresia.fecha_inicio, membresia.fecha_final, 
+                        membresia.id_cliente, membresia.id_plan, planes.precio AS precio_plan,
+                        cliente.nombre AS nombre_cliente, planes.nombre_plan AS nombre_plan
+                    FROM membresia
+                    JOIN planes ON membresia.id_plan = planes.id_plan
+                    JOIN cliente ON membresia.id_cliente = cliente.id_cliente
+                    WHERE fecha_final BETWEEN %s AND DATE_ADD(%s, INTERVAL %s DAY)
+                """, (fecha_actual, fecha_actual, dias))
+
+                membresias_data = cursor.fetchall()
+
+                # Crear instancias de la clase Membresia utilizando la función auxiliar
+                membresias = [cls.crear_instancia_membresia(fila) for fila in membresias_data]
+
+                return membresias
+        except Exception as e:
+            print(f"Error al obtener las membresías próximas a caducar: {e}")
+            return []
+        finally:
+            if conn:
+                conn.close()

@@ -147,7 +147,7 @@ def membresias_cliente(id_cliente):
     if not membresias:
         print('print en app, no se encontraron membresias')
         flash('No se encontraron membresías para el cliente', 'warning')
-        return redirect(url_for('lista_clientes'))
+        return redirect(url_for('buscar_clientes_form'))
     id_planes = [membresia.id_plan for membresia in membresias]
     nombres_y_precios_planes = obtener_nombres_y_precios_planes(id_planes)
     return render_template('membresias_cliente.html', cliente=cliente, membresias=membresias, nombres_y_precios_planes=nombres_y_precios_planes)
@@ -182,6 +182,15 @@ def todas_membresias():
         })
 
     return render_template('todas_membresias.html', membresias=membresias_extendidas)
+
+
+@app.route('/membresias_proximas_a_caducar')
+def membresias_proximas_a_caducar():    
+    membresias = Membresia.obtener_membresias_proximas_a_caducar()
+    if not membresias:
+        flash('No se encontraron membresías próximas a caducar', 'warning')
+        return redirect(url_for('index'))    
+    return render_template('membresias_proximas_a_caducar.html', membresias=membresias)
 
 
 

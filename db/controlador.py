@@ -271,8 +271,6 @@ def crear_membresia(id_cliente, id_plan, fecha_inicio):
 
 
 
-
-
 def obtener_todas_membresias():
     try:
         membresias = Membresia.obtener_todas_membresias()
@@ -388,7 +386,7 @@ def obtener_ultimos_clientes():
 
 
 
-# Función para obtener la lista de clientes inactivos
+
 def obtener_lista_clientes_inactivos():
     try:
         conn = obtener_conexion()
@@ -402,7 +400,7 @@ def obtener_lista_clientes_inactivos():
         if conn:
             conn.close()
 
-# Función para reactivar un cliente en la base de datos
+
 def reactivar_cliente_db(id_cliente):
     try:
         conn = obtener_conexion()
@@ -432,7 +430,7 @@ def obtener_cliente_por_nombre_apellido(nombre, apellido):
         print(f"Error al obtener cliente por nombre y apellido: {error}")
     return None
 
-# Función para agregar plan a la base de datos
+
 def agregar_plan_db(nombre, precio, descripcion, num_dias):
     try:
         conn = obtener_conexion()
