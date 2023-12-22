@@ -27,7 +27,7 @@ def agregar_cliente_db(cedula, nombre, apellido, correo, telefono, fecha_nacimie
             INSERT INTO cliente (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, estado)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
-            (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, 1)  # Estado activo al inicio
+            (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, 0)  
         )
 
         conn.commit()
@@ -261,13 +261,44 @@ def crear_membresia(id_cliente, id_plan, fecha_inicio):
             cursor.execute(
                 "INSERT INTO membresia (fecha_inicio, fecha_final, id_cliente, id_plan) VALUES (%s, %s, %s, %s)",
                 (fecha_inicio, fecha_final, id_cliente, id_plan)
-            )
+            )            
             conn.commit()
+
+            actualizar_estado_cliente(id_cliente, 1)
+
     except pymysql.Error as error:
         print(f"Error al crear membresía: {error}")
     finally:
         conn.close()
 
+
+
+def actualizar_estado_cliente(id_cliente, estado):
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE cliente SET estado = %s WHERE id_cliente = %s",
+                (estado, id_cliente)
+            )
+            conn.commit()
+    except pymysql.Error as error:
+        print(f"Error al actualizar el estado del cliente: {error}")
+    finally:
+        conn.close()
+
+
+def gestionar_vencimiento_membresias():
+    membresias_caducadas = Membresia.obtener_membresias_caducadas()
+
+    for membresia in membresias_caducadas:
+        actualizar_estado_cliente(membresia.id_cliente, 0)
+
+
+def verificar_membresias_vencidas():    
+    membresias_caducadas = Membresia.obtener_membresias_caducadas()
+    for membresia in membresias_caducadas:
+        actualizar_estado_cliente(membresia.id_cliente, 0)
 
 
 

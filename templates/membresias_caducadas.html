@@ -1,0 +1,38 @@
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Membresías Caducadas - Dorians Gym{% endblock %}
+
+{% block content %}
+
+    <h1 class="titulos_centrados">Membresías Caducadas</h1>
+
+    <div class="table-responsive">
+        <table class="table table-striped">
+            <thead>
+                <tr>
+                    <th>Id Membresia</th>
+                    <th>Fecha de Inicio</th>
+                    <th>ID de Cliente</th>
+                    <th>Nombre de Cliente</th>
+                    <th>Nombre del Plan</th>
+                    <th>Fecha Final</th>
+                    <th>Precio del Plan</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for membresia in membresias %}
+                    <tr>
+                        <td>{{ membresia.id_membresia }}</td>
+                        <td>{{ membresia.fecha_inicio }}</td>
+                        <td>{{ membresia.id_cliente }}</td>
+                        <td>{{ membresia.nombre_cliente }}</td>
+                        <td>{{ membresia.nombre_plan }}</td>
+                        <td>{{ membresia.fecha_final }}</td>
+                        <td>{{ membresia.precio_plan }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+{% endblock %}

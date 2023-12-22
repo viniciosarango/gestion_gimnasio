@@ -4,10 +4,10 @@ from db.database import obtener_conexion
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
 from db.forms import AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm, LoginForm, RegistroClienteForm
-from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_id_cliente_por_usuario, eliminar_cliente_db, registrar_cliente
+from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_id_cliente_por_usuario, eliminar_cliente_db, registrar_cliente, verificar_membresias_vencidas
 from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
-from db.models import db, Usuario, Membresia
+from db.models import db, Usuario, Membresia, Cliente
 from datetime import datetime
 
 
@@ -30,6 +30,8 @@ def load_user(user_id):
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
+
+    verificar_membresias_vencidas()
     form = LoginForm()
 
     if form.validate_on_submit():
@@ -192,6 +194,14 @@ def membresias_proximas_a_caducar():
         return redirect(url_for('index'))    
     return render_template('membresias_proximas_a_caducar.html', membresias=membresias)
 
+
+@app.route('/membresias_caducadas')
+def membresias_caducadas():
+    membresias = Membresia.obtener_membresias_caducadas()
+    if not membresias:
+        flash('No se encontraron membresías caducadas', 'warning')
+        return redirect(url_for('buscar_clientes_form'))
+    return render_template('membresias_caducadas.html', membresias=membresias)
 
 
 @app.route('/agregar_plan', methods=['GET', 'POST'])
@@ -412,8 +422,14 @@ def inactivar_cliente(id_cliente):
     return redirect(url_for('lista_clientes'))
 
  
-
-
+@app.route('/cumpleanios_proximos')
+def cumpleanios_proximos():
+    try:
+        clientes_cumpleanios = Cliente.obtener_cumpleanios_proximos()
+        return render_template('cumpleanios_proximos.html', clientes_cumpleanios=clientes_cumpleanios)
+    except Exception as e:
+        print(f"Error en la ruta /cumpleanios_proximos: {e}")
+        return "Error interno del servidor", 500
 
 
 if __name__ == '__main__':

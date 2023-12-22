@@ -73,14 +73,15 @@
                                 Agregar Cliente
                             </a>
                         </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-orange" href="{{ url_for('lista_clientes') }}">
-                                Lista de Clientes Activos
-                            </a>
-                        </li>
+                        
                         <li class="nav-item">
                             <a class="nav-link text-orange" href="{{ url_for('lista_clientes_inactivos') }}">
                                 Lista de Clientes Inactivos
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link text-orange" href="{{ url_for('cumpleanios_proximos') }}">
+                                Cumpleañeros
                             </a>
                         </li>
                         
@@ -113,6 +114,12 @@
                         <li class="nav-item">
                             <a class="nav-link text-orange" href="{{ url_for('membresias_proximas_a_caducar') }}">
                                 Por caducar
+                            </a>
+                        </li>
+
+                        <li class="nav-item">
+                            <a class="nav-link text-orange" href="{{ url_for('membresias_caducadas') }}">
+                                Caducadas
                             </a>
                         </li>
                         

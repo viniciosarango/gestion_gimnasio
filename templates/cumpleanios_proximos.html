@@ -1,0 +1,38 @@
+<!-- cumpleanios_proximos.html -->
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Cumpleaños Próximos{% endblock %}
+
+{% block content %}
+    <h1>Cumpleaños Próximos</h1>
+    {% if clientes_cumpleanios %}
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nombre</th>
+                    <th>Fecha de Nacimiento</th>
+                    <th>Edad</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for cliente in clientes_cumpleanios %}
+                    <tr>
+                        <td>{{ cliente.id_cliente }}</td>
+                        <td>{{ cliente.nombre }} {{ cliente.apellido }}</td>
+                        <td>{{ cliente.fecha_nacimiento }}</td>
+                        <td>{{ cliente.edad }}</td>
+                        <td>
+                            <form action="{{ url_for('datos_cliente', id_cliente=cliente.id_cliente) }}" method="get" style="display: inline;">
+                                <button type="submit" class="btn btn-primary">Ver Detalles</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    {% else %}
+        <p>No hay cumpleaños próximos.</p>
+    {% endif %}
+{% endblock %}
