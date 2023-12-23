@@ -104,24 +104,21 @@ class Membresia:
             conn = obtener_conexion()
             with conn.cursor() as cursor:
                 fecha_actual = datetime.now().strftime("%Y-%m-%d")
-
-                # Consulta para obtener membresías próximas a caducar con información del cliente y el plan
+                
                 cursor.execute("""
                     SELECT membresia.id_membresia, membresia.fecha_inicio, membresia.fecha_final, 
                         membresia.id_cliente, membresia.id_plan, planes.precio AS precio_plan,
-                        cliente.nombre AS nombre_cliente, planes.nombre_plan AS nombre_plan
+                        CONCAT(cliente.nombre, ' ', cliente.apellido) AS nombre_cliente, planes.nombre_plan AS nombre_plan
                     FROM membresia
                     JOIN planes ON membresia.id_plan = planes.id_plan
                     JOIN cliente ON membresia.id_cliente = cliente.id_cliente
                     WHERE fecha_final BETWEEN %s AND DATE_ADD(%s, INTERVAL %s DAY)
                 """, (fecha_actual, fecha_actual, dias))
 
-                membresias_data = cursor.fetchall()
-
-                # Crear instancias de la clase Membresia utilizando la función auxiliar
+                membresias_data = cursor.fetchall()                
                 membresias = [cls.crear_instancia_membresia(fila) for fila in membresias_data]
-
                 return membresias
+        
         except Exception as e:
             print(f"Error al obtener las membresías próximas a caducar: {e}")
             return []
@@ -152,6 +149,7 @@ class Membresia:
                 membresias_data = cursor.fetchall()
                 
                 membresias = [cls.crear_instancia_membresia(fila) for fila in membresias_data]
+                print("obterner membresias caducadas", membresias_data)
 
                 return membresias
         except Exception as e:
@@ -160,6 +158,36 @@ class Membresia:
         finally:
             if conn:
                 conn.close()
+
+
+    @classmethod
+    def obtener_membresia_por_id(cls, id_membresia):
+        conn = obtener_conexion()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "SELECT * FROM membresia WHERE id_membresia = %s", (id_membresia,)
+                )
+                membresia_data = cursor.fetchone()
+
+                print("Resultado de la consulta:", membresia_data)  # Nuevo print para ver el resultado de la consulta
+
+                if membresia_data:
+                    return cls(
+                        id_membresia=membresia_data[0],
+                        fecha_inicio=membresia_data[1],
+                        fecha_final=membresia_data[2],
+                        id_cliente=membresia_data[3],
+                        id_plan=membresia_data[4],
+                        precio_plan=membresia_data[5] if len(membresia_data) > 5 else None,
+                    )
+                else:
+                    return None
+        except pymysql.Error as error:
+            print(f"Error al obtener membresía por ID: {error}")
+        finally:
+            conn.close()
+
 
 
 class Cliente:

@@ -5,7 +5,7 @@ import os
 from flask import render_template, redirect, url_for, flash, session, abort
 from functools import wraps
 import base64
-from datetime import datetime
+from datetime import datetime, time
 from datetime import timedelta
 from db.models import Membresia, Usuario, db
 from flask_login import login_required
@@ -250,21 +250,20 @@ def crear_membresia(id_cliente, id_plan, fecha_inicio):
     conn = obtener_conexion()
     try:
         with conn.cursor() as cursor:
-            
-            # Duración en días del plan desde la base de datos
             duracion_en_dias = obtener_duracion_plan_por_id(id_plan)
-            
-            # Calcular fecha_final usando la función
             fecha_final = calcular_fecha_final(fecha_inicio, duracion_en_dias)
+            fecha_actual = datetime.combine(datetime.now().date(), time())
 
-            # Insertar membresía en la base de datos
             cursor.execute(
                 "INSERT INTO membresia (fecha_inicio, fecha_final, id_cliente, id_plan) VALUES (%s, %s, %s, %s)",
                 (fecha_inicio, fecha_final, id_cliente, id_plan)
             )            
             conn.commit()
 
-            actualizar_estado_cliente(id_cliente, 1)
+            print(f"Fecha actual: {fecha_actual}")
+            print(f"Fecha final: {fecha_final}")
+
+            actualizar_estado_cliente(id_cliente, 1 if fecha_actual <= fecha_final else 0)
 
     except pymysql.Error as error:
         print(f"Error al crear membresía: {error}")
@@ -272,6 +271,53 @@ def crear_membresia(id_cliente, id_plan, fecha_inicio):
         conn.close()
 
 
+def editar_membresia(id_membresia, nueva_fecha_final):
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE membresia SET fecha_final = %s WHERE id_membresia = %s",
+                (nueva_fecha_final, id_membresia)
+            )
+            conn.commit()
+    except pymysql.Error as error:
+        print(f"Error al editar membresía: {error}")
+    finally:
+        conn.close()
+'''
+
+def editar_membresia(id_membresia, nueva_fecha_final):
+    conn = obtener_conexion()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "UPDATE membresia SET fecha_final = %s WHERE id_membresia = %s",
+                (nueva_fecha_final, id_membresia)
+            )
+            conn.commit()
+
+            # Añadir print para verificar la fecha después de la actualización
+            print(f"Fecha final actualizada: {nueva_fecha_final}")
+
+            # Obtener la fecha actual
+            fecha_actual = datetime.combine(datetime.now().date(), time())
+
+            # Obtener la fecha final de la membresía
+            membresia = Membresia.obtener_membresia_por_id(id_membresia)
+            fecha_final = membresia.fecha_final
+
+            # Añadir prints para verificar las fechas
+            print(f"Fecha actual: {fecha_actual}")
+            print(f"Fecha final: {fecha_final}")
+
+            # Actualizar el estado del cliente
+            actualizar_estado_cliente(membresia.id_cliente, 1 if fecha_actual <= fecha_final else 0)
+
+    except pymysql.Error as error:
+        print(f"Error al editar membresía: {error}")
+    finally:
+        conn.close()
+'''
 
 def actualizar_estado_cliente(id_cliente, estado):
     conn = obtener_conexion()
@@ -297,6 +343,8 @@ def gestionar_vencimiento_membresias():
 
 def verificar_membresias_vencidas():    
     membresias_caducadas = Membresia.obtener_membresias_caducadas()
+    print("Membresías caducadas:", membresias_caducadas)
+
     for membresia in membresias_caducadas:
         actualizar_estado_cliente(membresia.id_cliente, 0)
 
@@ -305,6 +353,8 @@ def verificar_membresias_vencidas():
 def obtener_todas_membresias():
     try:
         membresias = Membresia.obtener_todas_membresias()
+        print("Todas las Membresías:", membresias)
+
         return membresias
     except Exception as e:
         print(f"Error al obtener todas las membresías: {e}")
@@ -314,6 +364,8 @@ def obtener_todas_membresias():
 def obtener_membresias_cliente(id_cliente):
     try:
         membresias = Membresia.obtener_membresias_cliente(id_cliente)
+        print("Membresías Obtenidas:", membresias)
+
         return membresias
         
     except Exception as e:
@@ -376,6 +428,12 @@ def buscar_cliente_por_id(id_cliente):
     except Exception as error:
         print(f"Error al buscar cliente por ID: {error}")
         return None
+
+def buscar_cliente_por_id_con_membresias(id_cliente):
+    cliente = buscar_cliente_por_id(id_cliente)
+    if cliente:
+        cliente['membresias'] = Membresia.obtener_membresias_cliente(id_cliente)
+    return cliente
 
 
 def obtener_lista_clientes(search_term=None):

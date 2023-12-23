@@ -17,6 +17,7 @@
                     <th>Nombre del Plan</th>
                     <th>Fecha Final</th>
                     <th>Precio del Plan</th>
+                    <th>Editar Membresia</th>
                 </tr>
             </thead>
             <tbody>
@@ -29,6 +30,9 @@
                     <td>{{ membresia.nombre_plan }}</td>
                     <td>{{ membresia.fecha_final }}</td>
                     <td>{{ membresia.precio_plan }}</td>
+                    <td>                            
+                        <a href="{{ url_for('editar_membresia_route', id_membresia=membresia.id_membresia) }}" class="btn btn-primary">Editar</a>
+                    </td>
                 </tr>
                 {% endfor %}
             </tbody>

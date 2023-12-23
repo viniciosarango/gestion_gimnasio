@@ -24,7 +24,8 @@
                         <li class="list-group-item"><strong>Fecha de Nacimiento:</strong> {{ cliente['fecha_nacimiento'] }}</li>
                         <li class="list-group-item"><strong>Correo:</strong> {{ cliente['correo'] }}</li>
                         <li class="list-group-item"><strong>Teléfono:</strong> {{ cliente['telefono'] }}</li>
-                        <li class="list-group-item"><strong>Estado:</strong> {% if membresias and membresias[0].fecha_final >= hoy %} Activo {% else %} Inactivo {% endif %}</li>
+                        <li class="list-group-item"><strong>Estado:</strong> {% if cliente['estado'] %}Activo{% else %}Inactivo{% endif %}</li>
+
                     </ul>
                 </div>
             </div>

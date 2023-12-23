@@ -4,11 +4,11 @@ from db.database import obtener_conexion
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
 from db.forms import AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm, LoginForm, RegistroClienteForm
-from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_id_cliente_por_usuario, eliminar_cliente_db, registrar_cliente, verificar_membresias_vencidas
+from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_id_cliente_por_usuario, eliminar_cliente_db, registrar_cliente, verificar_membresias_vencidas, buscar_cliente_por_id_con_membresias, editar_membresia
 from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
 from db.models import db, Usuario, Membresia, Cliente
-from datetime import datetime
+from datetime import datetime, date
 
 
 
@@ -125,6 +125,20 @@ def crear_membresia_route():
         return jsonify({'error': f'Error al crear membresía: {str(e)}'}), 500
 
 
+@app.route('/editar_membresia/<int:id_membresia>', methods=['GET', 'POST'])
+def editar_membresia_route(id_membresia):
+    if request.method == 'POST':
+        nueva_fecha_final = request.form.get('nueva_fecha_final')
+        editar_membresia(id_membresia, nueva_fecha_final)
+        flash('Fecha de membresía editada correctamente', 'success')
+        return redirect(url_for('membresias_proximas_a_caducar'))  # Puedes redirigir a la página que necesites
+    
+    membresia = Membresia.obtener_membresia_por_id(id_membresia)  # Implementa esta función según tus necesidades
+    return render_template('editar_membresia.html', membresia=membresia)
+
+
+
+
 
 @app.route('/asignar_membresia/<int:id_cliente>', methods=['GET', 'POST'])
 def asignar_membresia(id_cliente):
@@ -191,7 +205,7 @@ def membresias_proximas_a_caducar():
     membresias = Membresia.obtener_membresias_proximas_a_caducar()
     if not membresias:
         flash('No se encontraron membresías próximas a caducar', 'warning')
-        return redirect(url_for('index'))    
+        return redirect(url_for('buscar_clientes_form'))    
     return render_template('membresias_proximas_a_caducar.html', membresias=membresias)
 
 
@@ -310,10 +324,12 @@ def reactivar_cliente(id_cliente):
 
 @app.route('/datos_cliente/<int:id_cliente>')
 def datos_cliente(id_cliente):
-    cliente = buscar_cliente_por_id(id_cliente)  
+    cliente = buscar_cliente_por_id_con_membresias(id_cliente)
 
     if cliente:
+        #hoy = date.today()
         print(f"Cliente encontrado: {cliente}")
+        
         return render_template('datos_cliente.html', cliente=cliente)
     else:
         flash('Cliente no encontrado.', 'danger')        

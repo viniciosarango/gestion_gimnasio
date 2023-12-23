@@ -1,0 +1,12 @@
+{% extends 'gym_maestra.html' %}
+
+{% block title %}Editar Membresía{% endblock %}
+
+{% block content %}
+<h1>Editar Membresía</h1>
+<form method="post">
+    <label for="nueva_fecha_final">Nueva Fecha Final:</label>
+    <input type="date" id="nueva_fecha_final" name="nueva_fecha_final" required>
+    <button type="submit">Guardar</button>
+</form>
+{% endblock %}
