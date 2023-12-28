@@ -5,6 +5,14 @@
 
 {% block content %}
     <h1>Cumpleaños Próximos</h1>
+
+    <div class="d-flex justify-content-center mb-3 mt-3">
+        <a href="{{ url_for('agregar_cliente') }}" class="btn btn-success">Añadir Cliente</a>
+        <a href="{{ url_for('lista_clientes') }}" class="btn btn-primary mx-2">Lista de Clientes</a>
+        <a href="{{ url_for('lista_clientes_inactivos') }}" class="btn btn-danger mx-2">Clientes Inactivos</a>
+        
+    </div>
+
     {% if clientes_cumpleanios %}
         <table class="table">
             <thead>

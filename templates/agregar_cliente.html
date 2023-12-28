@@ -3,8 +3,17 @@
 {% block title %}Agregar Cliente - Dorians Gym{% endblock %}
 
 {% block content %}
+
+
+
+<div class="d-flex justify-content-end mb-3 mt-3">
+    <a href="{{ url_for('lista_clientes') }}" class="btn btn-primary mx-2 ml-auto">Volver a Clientes</a>
+</div>
+
     <div class="container mt-4">
+        
         <div class="row justify-content-center">
+            
             <div class="col-md-6">
                 <h1 class="mb-3">Agregar Cliente</h1>
                 <form method="post" enctype="multipart/form-data">

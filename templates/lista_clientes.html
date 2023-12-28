@@ -3,19 +3,23 @@
 {% block title %}Lista de Clientes - Dorians Gym{% endblock %}
 
 {% block content %}
-    
     <h1 class="titulos_centrados">Lista de Clientes</h1>
+
+    <div class="d-flex justify-content-center mb-3 mt-3">
+        <a href="{{ url_for('agregar_cliente') }}" class="btn btn-success">Añadir Cliente</a>
+        
+        <a href="{{ url_for('lista_clientes_inactivos') }}" class="btn btn-danger mx-2">Clientes Inactivos</a>
+        <a href="{{ url_for('cumpleanios_proximos') }}" class="btn btn-info">Cumpleaños</a>
+    </div>
     
     <form method="GET" action="{{ url_for('lista_clientes') }}" class="mb-3">
-        <div class="input-group">
+        <div class="input-group" >
             <input type="text" class="form-control" name="search" placeholder="Buscar por nombre, apellido o cédula" value="{{ request.args.get('search', '') }}">
             <button type="submit" class="btn btn-primary">Buscar</button>
         </div>
     </form>
 
-    <div class="d-flex justify-content-end mb-3">
-        <a href="{{ url_for('agregar_cliente') }}" class="btn btn-success">Añadir Cliente</a>
-    </div>
+    
     
     <div class="table-responsive">
         <table class="table table-striped">
@@ -27,12 +31,11 @@
                     <th>Apellido</th>
                     <th>Correo</th>
                     <th>Teléfono</th>
-                    
                     <th>Estado</th>
                     <th>Ver mas</th>
                     <th>Actualizar</th>
                     <th>Inactivar</th>
-                    <th>Eliminar</th>
+                    
                 </tr>
             </thead>
             <tbody>
@@ -44,7 +47,6 @@
                         <td>{{ cliente[3] }}</td>
                         <td>{{ cliente[4] }}</td>
                         <td>{{ cliente[5] }}</td>
-                        
                         <td>{% if cliente[6] == 1 %} Activo {% else %} Inactivo {% endif %}</td>
                         <td>
                             <a href="{{ url_for('datos_cliente', id_cliente=cliente[0]) }}" class="btn btn-primary btn-sm">Ver mas</a>
@@ -55,9 +57,7 @@
                         <td>
                             <a href="{{ url_for('inactivar_cliente', id_cliente=cliente[0]) }}" class="btn btn-danger btn-sm">Inactivar</a>
                         </td>
-                        <td> 
-                            <a href="{{ url_for('eliminar_cliente', id_cliente=cliente[0]) }}" class="btn btn-danger btn-sm">Eliminar</a>
-                        </td>
+                        
                     </tr>
                 {% endfor %}
             </tbody>

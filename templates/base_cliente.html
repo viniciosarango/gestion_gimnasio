@@ -1,0 +1,14 @@
+{% extends 'base.html' %}
+
+{% block menu %}
+    <!-- Menú específico para clientes -->
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('datos_cliente', id_cliente=current_user.id_cliente) }}">Ver Perfil</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('membresias_cliente', id_cliente=current_user.id_cliente) }}">Ver Membresias</a>
+    </li>
+    <li class="nav-item">
+        <a class="nav-link" href="{{ url_for('logout') }}">Salir</a>
+    </li>
+{% endblock %}

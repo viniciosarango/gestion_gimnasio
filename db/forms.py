@@ -1,6 +1,6 @@
 from flask_wtf import FlaskForm
 from wtforms import StringField, DateField, FloatField, TextAreaField, PasswordField, SubmitField, FileField, SelectField, HiddenField, IntegerField
-from wtforms.validators import DataRequired, Email, Length, NumberRange
+from wtforms.validators import DataRequired, Email, Length, NumberRange, EqualTo
 from wtforms import validators
 
 
@@ -44,3 +44,8 @@ class RegistroClienteForm(FlaskForm):
     password = PasswordField('Contraseña', validators=[DataRequired()])
     submit = SubmitField('Registrar cuenta')
 
+class AgregarAdminForm(FlaskForm):
+    username = StringField('Nombre de Usuario', validators=[DataRequired()])
+    password = PasswordField('Contraseña', validators=[DataRequired(), EqualTo('confirm_password', message='Las contraseñas deben coincidir')])
+    confirm_password = PasswordField('Confirmar Contraseña', validators=[DataRequired()])
+    submit = SubmitField('Registrar Administrador')

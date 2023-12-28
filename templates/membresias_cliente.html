@@ -1,4 +1,8 @@
-{% extends 'gym_maestra.html' %}
+{% if current_user.tiene_rol('cliente') %}
+    {% extends 'base_cliente.html' %}
+{% elif current_user.tiene_rol('admin') %}
+    {% extends 'gym_maestra.html' %}
+{% endif %}
 
 {% block title %}Membresías del Cliente - Dorians Gym{% endblock %}
 

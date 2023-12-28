@@ -3,10 +3,55 @@
 {% block title %}Editar Membresía{% endblock %}
 
 {% block content %}
-<h1>Editar Membresía</h1>
-<form method="post">
-    <label for="nueva_fecha_final">Nueva Fecha Final:</label>
-    <input type="date" id="nueva_fecha_final" name="nueva_fecha_final" required>
-    <button type="submit">Guardar</button>
-</form>
+  <div class="container mt-4">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card">
+          <div class="card-body">
+            <h1 class="card-title text-center">Editar Membresía</h1>
+            {% if membresia %}
+              <div class="mt-4">
+                <h4>Información Actual de la Membresía</h4>
+                <ul class="list-group">
+                  <li class="list-group-item">ID de Membresía: {{ membresia.id_membresia }}</li>
+                  <li class="list-group-item">Nombre del Cliente: {{ cliente.nombre }} {{ cliente.apellido }}</li>
+                  <li class="list-group-item">Nombre del Plan: 
+                    {% if membresia.id_plan in nombres_y_precios_planes %}
+                      {{ nombres_y_precios_planes[membresia.id_plan]['nombre'] }}
+                    {% else %}
+                      No especificado
+                    {% endif %}
+                  </li>
+                  <li class="list-group-item">Precio del Plan: 
+                    {% if membresia.id_plan in nombres_y_precios_planes %}
+                      {{ nombres_y_precios_planes[membresia.id_plan]['precio'] }}
+                    {% else %}
+                      No especificado
+                    {% endif %}
+                  </li>
+                  <li class="list-group-item">Fecha de Inicio: {{ membresia.fecha_inicio }}</li>
+                  <li class="list-group-item">Fecha Final: {{ membresia.fecha_final }}</li>
+                </ul>
+              </div>
+
+              <div class="mt-4">
+                <form method="post">
+                  <div class="form-group">
+                    <label for="nueva_fecha_final">Nueva Fecha Final:</label>
+                    <input type="date" class="form-control mb-2" id="nueva_fecha_final" name="nueva_fecha_final" required>                    
+                  </div>
+                  <div class="mb-3">
+                    <button type="submit" class="btn btn-primary">Guardar</button>
+                  </div>
+                </form>
+              </div>
+            {% else %}
+              <p class="mt-4">No se encontró información de la membresía.</p>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="mb-3"></div>
+  </div>
 {% endblock %}

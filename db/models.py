@@ -17,8 +17,27 @@ class Usuario(db.Model, UserMixin):
     role = db.Column(db.Enum('admin', 'cliente'), nullable=False)
     id_cliente = db.Column(db.Integer, db.ForeignKey('cliente.id_cliente'))
 
-    def __repr__(self):
-        return f"<Usuario {self.username}>"
+    def get_id(self):
+        return str(self.id_usuario)
+
+    def is_authenticated(self):
+        return True  #
+
+    def is_active(self):
+        return True  
+
+    def is_anonymous(self):
+        return False
+
+    def check_password(self, password):
+        # Implementa la verificación de contraseña
+        return check_password_hash(self.password, password)
+    
+    def tiene_rol(self, rol):
+        return self.role == rol
+
+
+
 
 class Membresia:
     def __init__(self, id_membresia, fecha_inicio, fecha_final, id_cliente, id_plan, precio_plan, nombre_cliente=None, nombre_plan=None):
@@ -33,6 +52,8 @@ class Membresia:
     
     @staticmethod
     def crear_instancia_membresia(fila):
+        nombre_plan = fila[7] if len(fila) > 7 else None
+        nombre_cliente = fila.get('nombre_cliente') if 'nombre_cliente' in fila else None
         return Membresia(
             id_membresia=fila[0],
             fecha_inicio=fila[1],
@@ -40,10 +61,13 @@ class Membresia:
             id_cliente=fila[3],
             id_plan=fila[4],
             precio_plan=fila[5],
-            nombre_cliente=fila[6],
-            nombre_plan=fila[7]
+            #nombre_cliente=fila[6],
+            #nombre_plan=fila[7] if len(fila) > 7 else None
+            nombre_cliente=nombre_cliente,
+            nombre_plan=nombre_plan
         )
 
+    
 
     @classmethod
     def from_dict(cls, membresia_dict):
@@ -79,6 +103,31 @@ class Membresia:
             if conn:
                 conn.close()
 
+    @classmethod
+    def obtener_membresias_activas_cliente(cls, id_cliente):
+        try:
+            conn = obtener_conexion()
+            with conn.cursor() as cursor:
+                cursor.execute("""
+                    SELECT membresia.*, planes.precio, planes.nombre_plan, cliente.nombre AS nombre_cliente, cliente.apellido
+                    FROM membresia
+                    JOIN planes ON membresia.id_plan = planes.id_plan
+                    WHERE membresia.id_cliente = %s
+                    AND membresia.fecha_final >= CURDATE()  
+                    ORDER BY fecha_final DESC
+                """, (id_cliente,))
+                membresias_data = cursor.fetchall()                
+                membresias = [cls.crear_instancia_membresia(fila) for fila in membresias_data]                
+                for m in membresias:
+                    print(f"ID: {m.id_membresia}, Nombre del Plan: {m.nombre_plan}") 
+                return membresias
+        
+        except Exception as e:
+            print(f"Error al obtener las membresías activas del cliente: {e}")
+            return []
+        finally:
+            if conn:
+                conn.close()
 
     @classmethod
     def obtener_todas_membresias(cls):
@@ -188,6 +237,11 @@ class Membresia:
         finally:
             conn.close()
 
+    
+
+
+
+
 
 
 class Cliente:
@@ -209,6 +263,45 @@ class Cliente:
             edad = hoy.year - fecha_nacimiento.year - ((hoy.month, hoy.day) < (fecha_nacimiento.month, fecha_nacimiento.day))
             return edad
         return None
+    
+    def obtener_membresias_activas(self):
+        return Membresia.obtener_membresias_activas_cliente(self.id_cliente)
+
+    def actualizar_estado(self, nuevo_estado):
+        conn = obtener_conexion()
+        try:
+            with conn.cursor() as cursor:
+                cursor.execute(
+                    "UPDATE cliente SET estado = %s WHERE id_cliente = %s",
+                    (nuevo_estado, self.id_cliente)
+                )
+                conn.commit()
+        except pymysql.Error as error:
+            print(f"Error al actualizar el estado del cliente: {error}")
+        finally:
+            conn.close()
+
+    @classmethod
+    def obtener_cliente_por_id(cls, id_cliente):
+        try:
+            conn = obtener_conexion()
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM cliente WHERE id_cliente = %s", (id_cliente,))
+                cliente_data = cursor.fetchone()
+                if cliente_data:
+                    # Crear una instancia de la clase Cliente utilizando los datos de la base de datos
+                    cliente = cls(*cliente_data)
+                    return cliente
+                else:
+                    print(f"No se encontró cliente con ID {id_cliente}.")
+                    return None
+        except Exception as e:
+            print(f"Error al obtener cliente por ID: {e}")
+            return None
+        finally:
+            if conn:
+                conn.close()
+    
     
     @classmethod
     def obtener_todos_los_clientes(cls):
@@ -233,7 +326,6 @@ class Cliente:
                 conn.close()
 
     
-
     @classmethod
     def obtener_cumpleanios_proximos(cls, dias=7):
         try:
@@ -241,21 +333,17 @@ class Cliente:
             with conn.cursor() as cursor:
                 hoy = date.today()
                 fecha_limite = hoy + timedelta(days=dias)
-
-                # Consulta para obtener clientes con cumpleaños en los próximos días
+                
                 cursor.execute("""
                     SELECT *
                     FROM cliente
                     WHERE DAYOFYEAR(fecha_nacimiento) BETWEEN DAYOFYEAR(%s) AND DAYOFYEAR(%s)
                 """, (hoy, fecha_limite))
-
                 clientes_data = cursor.fetchall()
-
                 if clientes_data:
-                    # Crear instancias de la clase Cliente utilizando los datos de la base de datos
+                    
                     clientes = [cls(*fila) for fila in clientes_data]
-
-                    # Calcular la edad y almacenarla en cada instancia de Cliente
+                    
                     for cliente in clientes:
                         cliente.edad = cliente.calcular_edad()
                         
@@ -270,7 +358,7 @@ class Cliente:
             if conn:
                 conn.close()
 
-    # Eliminamos la referencia a la función crear_instancia_cliente
+
 
 clientes = Cliente.obtener_cumpleanios_proximos()
 for cliente in clientes:

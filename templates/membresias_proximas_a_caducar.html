@@ -6,6 +6,15 @@
 
     <h1 class="titulos_centrados">Membresías Próximas a Caducar</h1>
 
+    <!-- Botones adicionales centrados con espacio vertical -->
+<div class="d-flex justify-content-center mb-3 mt-3">
+    
+    <a href="{{ url_for('membresias_proximas_a_caducar') }}" class="btn btn-warning mx-2">Membresías por Caducar</a>
+    <a href="{{ url_for('membresias_caducadas') }}" class="btn btn-danger mx-2">Membresías Caducadas</a>
+    <a href="{{ url_for('todas_membresias') }}" class="btn btn-info">Todas las Membresías</a>
+</div>
+
+
     <div class="table-responsive">
         <table class="table table-striped">
             <thead>

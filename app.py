@@ -3,8 +3,8 @@ from flask_login import login_required, LoginManager, login_user, logout_user, c
 from db.database import obtener_conexion
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
-from db.forms import AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm, LoginForm, RegistroClienteForm
-from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_id_cliente_por_usuario, eliminar_cliente_db, registrar_cliente, verificar_membresias_vencidas, buscar_cliente_por_id_con_membresias, editar_membresia
+from db.forms import AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm, LoginForm, RegistroClienteForm, AgregarAdminForm
+from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_id_cliente_por_usuario, eliminar_cliente_db, registrar_cliente, verificar_membresias_vencidas, buscar_cliente_por_id_con_membresias, editar_membresia, agregar_administrador_db, obtener_roles_del_usuario, rol_requerido, actualizar_estado_cliente
 from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
 from db.models import db, Usuario, Membresia, Cliente
@@ -23,38 +23,51 @@ db.init_app(app)
 login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
+
+
 @login_manager.user_loader
 def load_user(user_id):
-    return Usuario.query.get(int(user_id))
+    print(f"load_user - user_id: {user_id}")
+    user = Usuario.query.get(int(user_id))
+    print(f"Loaded user: {user}")
+    if user:
+        user.is_authenticated = True
+        user.roles = obtener_roles_del_usuario(user)  
+    return user
+
 
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-
-    verificar_membresias_vencidas()
+    #verificar_membresias_vencidas()
     form = LoginForm()
-
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
-
         user = Usuario.query.filter_by(username=username, password=password).first()
-
-        if user:            
-            session['user_id'] = user.id_usuario
-            session['user_role'] = user.role
-
-            flash('Inicio de sesión exitoso', 'success')
-
-            # Obtener el id_cliente correspondiente al user_id
-            id_cliente = obtener_id_cliente_por_usuario(session['user_id'])
-            return redirect(url_for('datos_cliente', id_cliente=id_cliente))
+        print(f"Type of user: {type(user)}")
+        if user:
+            login_user(user)  
+            flash('Inicio de sesión exitoso', 'success')            
+            if user.role == 'admin':
+                return redirect(url_for('pagina_principal'))
+            else:
+                id_cliente = obtener_id_cliente_por_usuario(user.id_usuario)
+                return redirect(url_for('datos_cliente', id_cliente=id_cliente))
         else:
             flash('Usuario o contraseña incorrectos', 'danger')
-
     return render_template('login.html', form=form)
 
+
+@app.route('/logout')
+def logout():
+    logout_user()
+    flash('Has cerrado sesión exitosamente', 'success')
+    return redirect(url_for('login'))
+
+
 @app.route('/datos_usuario')
+@rol_requerido('admin')
 def datos_usuario():
     
     if 'user_id' not in session:
@@ -82,15 +95,34 @@ def registro_cliente():
         correo = form.correo.data
         telefono = form.telefono.data
         fecha_nacimiento = form.fecha_nacimiento.data          
-        password = form.password.data
-
-        # Modificamos el correo para ser utilizado como username
+        password = form.password.data        
         username = correo
-
         registrar_cliente(cedula, nombre, apellido, correo, telefono, fecha_nacimiento, username, password)
         return redirect(url_for('login'))
 
     return render_template('registro_cliente.html', form=form)
+
+
+
+@app.route('/agregar_admin', methods=['GET', 'POST'])
+@rol_requerido('admin')
+def agregar_admin():
+    
+    if 'admin' not in obtener_roles_del_usuario(current_user):
+    
+        flash('Acceso no autorizado', 'danger')
+        return redirect(url_for('pagina_principal'))
+
+    form = AgregarAdminForm()
+    if form.validate_on_submit():        
+        username = form.username.data
+        password = form.password.data        
+        agregar_administrador_db(username, password)
+        flash('Administrador registrado exitosamente', 'success')
+        return redirect(url_for('pagina_principal'))
+    return render_template('agregar_admin.html', form=form)
+
+
 
 
 
@@ -104,11 +136,17 @@ def index():
 
 
 @app.route('/pagina_principal')
+@rol_requerido('admin')
 def pagina_principal():
-    return render_template('pagina_principal.html')
+    if 'admin' in obtener_roles_del_usuario(current_user):
+        return render_template('pagina_principal.html')
+    else:
+        return render_template('acceso_restringido.html')
+
 
 
 @app.route('/crear_membresia', methods=['POST'])
+@rol_requerido('admin')
 def crear_membresia_route():
     data = request.get_json()
 
@@ -126,21 +164,36 @@ def crear_membresia_route():
 
 
 @app.route('/editar_membresia/<int:id_membresia>', methods=['GET', 'POST'])
+@rol_requerido('admin')
 def editar_membresia_route(id_membresia):
+    
     if request.method == 'POST':
         nueva_fecha_final = request.form.get('nueva_fecha_final')
+        membresia = Membresia.obtener_membresia_por_id(id_membresia)
+        id_cliente = membresia.id_cliente if membresia else None
         editar_membresia(id_membresia, nueva_fecha_final)
+        
+        if id_cliente is not None:
+            actualizar_estado_cliente(id_cliente)
+        
         flash('Fecha de membresía editada correctamente', 'success')
-        return redirect(url_for('membresias_proximas_a_caducar'))  # Puedes redirigir a la página que necesites
+        return redirect(url_for('membresias_proximas_a_caducar')) 
     
-    membresia = Membresia.obtener_membresia_por_id(id_membresia)  # Implementa esta función según tus necesidades
-    return render_template('editar_membresia.html', membresia=membresia)
+    membresia = Membresia.obtener_membresia_por_id(id_membresia)
+    id_cliente = membresia.id_cliente if membresia else None
+    cliente = buscar_cliente_por_id(id_cliente)
+        
+    id_planes = [membresia.id_plan]    
+    nombres_y_precios_planes = obtener_nombres_y_precios_planes(id_planes)
+    
+    return render_template('editar_membresia.html', membresia=membresia, nombres_y_precios_planes=nombres_y_precios_planes, cliente=cliente)
 
 
 
 
 
 @app.route('/asignar_membresia/<int:id_cliente>', methods=['GET', 'POST'])
+@rol_requerido('admin')
 def asignar_membresia(id_cliente):
     cliente = buscar_cliente_por_id(id_cliente)
 
@@ -156,20 +209,28 @@ def asignar_membresia(id_cliente):
 
 
 @app.route('/membresias_cliente/<int:id_cliente>')
+@login_required
 def membresias_cliente(id_cliente):
     cliente = buscar_cliente_por_id(id_cliente)
+    
+    if not current_user.tiene_rol('admin') and current_user.id_cliente != id_cliente:
+        flash('Acceso no permitido', 'danger')
+        return render_template('acceso_restringido.html'), 403
+
     membresias = obtener_membresias_cliente(id_cliente)
 
     if not membresias:
-        print('print en app, no se encontraron membresias')
         flash('No se encontraron membresías para el cliente', 'warning')
         return redirect(url_for('buscar_clientes_form'))
+
     id_planes = [membresia.id_plan for membresia in membresias]
     nombres_y_precios_planes = obtener_nombres_y_precios_planes(id_planes)
+
     return render_template('membresias_cliente.html', cliente=cliente, membresias=membresias, nombres_y_precios_planes=nombres_y_precios_planes)
 
 
 @app.route('/todas_membresias')
+@rol_requerido('admin')
 def todas_membresias():
     membresias = obtener_todas_membresias()
 
@@ -201,6 +262,7 @@ def todas_membresias():
 
 
 @app.route('/membresias_proximas_a_caducar')
+@rol_requerido('admin')
 def membresias_proximas_a_caducar():    
     membresias = Membresia.obtener_membresias_proximas_a_caducar()
     if not membresias:
@@ -210,6 +272,7 @@ def membresias_proximas_a_caducar():
 
 
 @app.route('/membresias_caducadas')
+@rol_requerido('admin')
 def membresias_caducadas():
     membresias = Membresia.obtener_membresias_caducadas()
     if not membresias:
@@ -219,6 +282,7 @@ def membresias_caducadas():
 
 
 @app.route('/agregar_plan', methods=['GET', 'POST'])
+@rol_requerido('admin')
 def agregar_plan():
     form = AgregarPlanForm()
 
@@ -236,6 +300,7 @@ def agregar_plan():
 
 
 @app.route('/actualizar_plan/<int:id_plan>', methods=['GET', 'POST'])
+@rol_requerido('admin')
 def actualizar_plan(id_plan):
     # Obtener el plan desde la base de datos
     plan = obtener_plan_por_id(id_plan)
@@ -268,6 +333,7 @@ def actualizar_plan(id_plan):
 
 
 @app.route('/eliminar_plan/<int:id_plan>')
+@rol_requerido('admin')
 def eliminar_plan(id_plan):
     eliminar_plan_en_db(id_plan)
     return redirect(url_for('planes_lista'))
@@ -275,12 +341,14 @@ def eliminar_plan(id_plan):
 
 
 @app.route('/planes_lista')
+@rol_requerido('admin')
 def planes_lista():
     planes = obtener_planes_desde_db()
     return render_template('planes_lista.html', planes=planes)
 
 
 @app.route('/gestion_membresias', methods=['GET', 'POST'])
+@rol_requerido('admin')
 def buscar_clientes_form():
     resultados = []
 
@@ -297,6 +365,7 @@ def buscar_clientes_form():
 
 
 @app.route('/lista_clientes')
+@rol_requerido('admin')
 def lista_clientes():
     search_term = request.args.get('search', '')
     clientes = obtener_lista_clientes(search_term)
@@ -309,12 +378,14 @@ def allowed_file(filename):
 
 
 @app.route('/lista_clientes_inactivos')
+@rol_requerido('admin')
 def lista_clientes_inactivos():
     clientes_inactivos = obtener_lista_clientes_inactivos()
     return render_template('lista_clientes_inactivos.html', clientes_inactivos=clientes_inactivos)
 
 
 @app.route('/reactivar_cliente/<int:id_cliente>')
+@rol_requerido('admin')
 def reactivar_cliente(id_cliente):
     
     reactivar_cliente_db(id_cliente)
@@ -323,14 +394,24 @@ def reactivar_cliente(id_cliente):
 
 
 @app.route('/datos_cliente/<int:id_cliente>')
+@login_required
+
 def datos_cliente(id_cliente):
     cliente = buscar_cliente_por_id_con_membresias(id_cliente)
 
     if cliente:
-        #hoy = date.today()
-        print(f"Cliente encontrado: {cliente}")
-        
-        return render_template('datos_cliente.html', cliente=cliente)
+        membresias_activas = Membresia.obtener_membresias_activas_cliente(id_cliente)
+        if current_user.role == 'cliente' and current_user.id_cliente == id_cliente:
+            id_planes = [membresia.id_plan for membresia in membresias_activas]
+            nombres_y_precios_planes = obtener_nombres_y_precios_planes(id_planes)
+            return render_template('datos_cliente.html', cliente=cliente, membresias_activas=membresias_activas, nombres_y_precios_planes=nombres_y_precios_planes)
+        elif current_user.role == 'admin':
+            id_planes = [membresia.id_plan for membresia in membresias_activas]
+            nombres_y_precios_planes = obtener_nombres_y_precios_planes(id_planes)
+            return render_template('datos_cliente.html', cliente=cliente, membresias_activas=membresias_activas, nombres_y_precios_planes=nombres_y_precios_planes)
+        else:
+            flash('Acceso no autorizado.', 'danger')
+            return redirect(url_for('datos_cliente', id_cliente=current_user.id_cliente))
     else:
         flash('Cliente no encontrado.', 'danger')        
         return redirect(url_for('lista_clientes'))
@@ -338,6 +419,7 @@ def datos_cliente(id_cliente):
 
 
 @app.route('/agregar_cliente', methods=['GET', 'POST'])
+@rol_requerido('admin')
 def agregar_cliente():
     form = AgregarClienteForm()
 
@@ -371,10 +453,11 @@ def agregar_cliente():
 
 
 @app.route('/actualizar_cliente/<int:id_cliente>', methods=['GET', 'POST'])
+@rol_requerido('admin')
 def actualizar_cliente(id_cliente):
     form = AgregarClienteForm()
 
-    # Obtener los datos del cliente por su ID
+    
     cliente = buscar_cliente_por_id(id_cliente)
 
     if cliente is None:
@@ -382,7 +465,7 @@ def actualizar_cliente(id_cliente):
         return redirect(url_for('lista_clientes'))
 
     if request.method == 'POST' and form.validate_on_submit():
-        # Manejo de la carga de archivos (foto de perfil)
+        
         if 'foto' in request.files:
             foto = request.files['foto']
             if foto.filename != '' and allowed_file(foto.filename):
@@ -394,7 +477,7 @@ def actualizar_cliente(id_cliente):
         else:
             filename = None
 
-        # Llamada a la función para actualizar el cliente en la base de datos
+        
         actualizar_cliente_db(
             id_cliente,
             form.cedula.data,
@@ -402,7 +485,7 @@ def actualizar_cliente(id_cliente):
             form.apellido.data,
             form.correo.data,
             form.telefono.data,
-            form.fecha_nacimiento.data,  # Agregar la fecha de nacimiento
+            form.fecha_nacimiento.data,  
             filename
         )
 
@@ -424,6 +507,7 @@ def actualizar_cliente(id_cliente):
 
 
 @app.route('/eliminar_cliente/<int:id_cliente>')
+@rol_requerido('admin')
 def eliminar_cliente(id_cliente):
     eliminar_cliente_db(id_cliente)
     return redirect(url_for('lista_clientes'))
@@ -431,6 +515,7 @@ def eliminar_cliente(id_cliente):
 
 
 @app.route('/inactivar_cliente/<int:id_cliente>')
+@rol_requerido('admin')
 def inactivar_cliente(id_cliente):
     # Llamada a la función para inactivar el cliente en la base de datos
     inactivar_cliente_db(id_cliente)
@@ -439,6 +524,7 @@ def inactivar_cliente(id_cliente):
 
  
 @app.route('/cumpleanios_proximos')
+@rol_requerido('admin')
 def cumpleanios_proximos():
     try:
         clientes_cumpleanios = Cliente.obtener_cumpleanios_proximos()

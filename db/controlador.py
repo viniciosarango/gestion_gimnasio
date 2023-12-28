@@ -1,4 +1,5 @@
 from flask import current_app
+
 import pymysql
 from db.database import obtener_conexion
 import os
@@ -7,12 +8,59 @@ from functools import wraps
 import base64
 from datetime import datetime, time
 from datetime import timedelta
-from db.models import Membresia, Usuario, db
-from flask_login import login_required
+from db.models import Membresia, Usuario, db, Cliente
+from flask_login import login_required, current_user
 from werkzeug.security import check_password_hash
 import traceback
 import random
 import string
+from functools import wraps
+
+
+def agregar_administrador_db(username, password):
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            INSERT INTO usuario (username, password, role)
+            VALUES (%s, %s, %s)
+            """,
+            (username, password, 'admin')  
+        )
+
+        conn.commit()
+
+    except Exception as e:
+        print(f"Error al agregar administrador a la base de datos: {e}")
+    finally:
+        if conn:
+            conn.close()
+
+from flask import abort, render_template
+
+def rol_requerido(rol_minimo):
+    def decorador(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if not current_user.tiene_rol(rol_minimo):
+                
+                return render_template('acceso_restringido.html')
+            return func(*args, **kwargs)
+        return wrapper
+    return decorador
+
+
+
+
+def obtener_roles_del_usuario(user):
+    if user:
+        return [user.role]
+    return []
+
+
+
 
 
 # Función para agregar cliente a la base de datos
@@ -263,7 +311,7 @@ def crear_membresia(id_cliente, id_plan, fecha_inicio):
             print(f"Fecha actual: {fecha_actual}")
             print(f"Fecha final: {fecha_final}")
 
-            actualizar_estado_cliente(id_cliente, 1 if fecha_actual <= fecha_final else 0)
+            actualizar_estado_cliente(id_cliente)
 
     except pymysql.Error as error:
         print(f"Error al crear membresía: {error}")
@@ -271,20 +319,14 @@ def crear_membresia(id_cliente, id_plan, fecha_inicio):
         conn.close()
 
 
-def editar_membresia(id_membresia, nueva_fecha_final):
-    conn = obtener_conexion()
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                "UPDATE membresia SET fecha_final = %s WHERE id_membresia = %s",
-                (nueva_fecha_final, id_membresia)
-            )
-            conn.commit()
-    except pymysql.Error as error:
-        print(f"Error al editar membresía: {error}")
-    finally:
-        conn.close()
-'''
+def actualizar_estado_cliente(id_cliente):
+    cliente = Cliente.obtener_cliente_por_id(id_cliente)
+    if cliente:
+        membresias_activas = cliente.obtener_membresias_activas()
+        estado = 1 if membresias_activas else 0
+        cliente.actualizar_estado(estado)
+
+
 
 def editar_membresia(id_membresia, nueva_fecha_final):
     conn = obtener_conexion()
@@ -294,44 +336,21 @@ def editar_membresia(id_membresia, nueva_fecha_final):
                 "UPDATE membresia SET fecha_final = %s WHERE id_membresia = %s",
                 (nueva_fecha_final, id_membresia)
             )
-            conn.commit()
+            conn.commit()            
+            cursor.execute("SELECT id_cliente FROM membresia WHERE id_membresia = %s", (id_membresia,))
+            id_cliente = cursor.fetchone()[0]
 
-            # Añadir print para verificar la fecha después de la actualización
-            print(f"Fecha final actualizada: {nueva_fecha_final}")
+            membresias_activas = Membresia.obtener_membresias_activas_cliente(id_cliente)
 
-            # Obtener la fecha actual
-            fecha_actual = datetime.combine(datetime.now().date(), time())
-
-            # Obtener la fecha final de la membresía
-            membresia = Membresia.obtener_membresia_por_id(id_membresia)
-            fecha_final = membresia.fecha_final
-
-            # Añadir prints para verificar las fechas
-            print(f"Fecha actual: {fecha_actual}")
-            print(f"Fecha final: {fecha_final}")
-
-            # Actualizar el estado del cliente
-            actualizar_estado_cliente(membresia.id_cliente, 1 if fecha_actual <= fecha_final else 0)
-
+            if not membresias_activas:
+                actualizar_estado_cliente(id_cliente)
     except pymysql.Error as error:
         print(f"Error al editar membresía: {error}")
     finally:
         conn.close()
-'''
 
-def actualizar_estado_cliente(id_cliente, estado):
-    conn = obtener_conexion()
-    try:
-        with conn.cursor() as cursor:
-            cursor.execute(
-                "UPDATE cliente SET estado = %s WHERE id_cliente = %s",
-                (estado, id_cliente)
-            )
-            conn.commit()
-    except pymysql.Error as error:
-        print(f"Error al actualizar el estado del cliente: {error}")
-    finally:
-        conn.close()
+
+
 
 
 def gestionar_vencimiento_membresias():
