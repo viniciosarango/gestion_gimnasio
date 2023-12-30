@@ -1,24 +1,19 @@
-{% extends 'gym_maestra.html' %}
+{% extends 'base_cliente.html' %}
 
-{% block title %}Actualizar Cliente - Dorians Gym{% endblock %}
+{% block title %}Actualizar Perfil - Dorians Gym{% endblock %}
 
 {% block content %}
     <div class="container mt-4">
-
-        <div class="d-flex justify-content-end mb-3 mt-3">
-            <a href="{{ url_for('lista_clientes') }}" class="btn btn-primary mx-2 ml-auto">Volver a Clientes</a>
-        </div>
-
         
         <div class="row justify-content-center">
             <div class="col-md-6">
-                <h1 class="mb-3">Actualizar Cliente</h1>
+                <h1 class="mb-3">Actualizar Perfil</h1>
                 <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
                     {{ form.hidden_tag() }}
 
                     <div class="mb-3">
                         {{ form.cedula.label(class="form-label") }}
-                        {{ form.cedula(class="form-control form-control-sm", required=True) }}
+                        {{ form.cedula(class="form-control form-control-sm", required=True, readonly="readonly") }}
                         <div class="invalid-feedback">
                             Por favor, ingresa la cédula.
                         </div>
@@ -26,7 +21,7 @@
 
                     <div class="mb-3">
                         {{ form.nombre.label(class="form-label") }}
-                        {{ form.nombre(class="form-control form-control-sm", required=True) }}
+                        {{ form.nombre(class="form-control form-control-sm", required=True, readonly="readonly") }}
                         <div class="invalid-feedback">
                             Por favor, ingresa el nombre.
                         </div>
@@ -34,7 +29,7 @@
 
                     <div class="mb-3">
                         {{ form.apellido.label(class="form-label") }}
-                        {{ form.apellido(class="form-control form-control-sm", required=True) }}
+                        {{ form.apellido(class="form-control form-control-sm", required=True, readonly="readonly") }}
                         <div class="invalid-feedback">
                             Por favor, ingresa el apellido.
                         </div>
@@ -58,7 +53,7 @@
 
                     <div class="mb-3">
                         {{ form.fecha_nacimiento.label(class="form-label") }}
-                        {{ form.fecha_nacimiento(class="form-control form-control-sm", required=True, type="date") }}
+                        {{ form.fecha_nacimiento(class="form-control form-control-sm", required=True, type="date", readonly="readonly") }}
                         <div class="invalid-feedback">
                             Por favor, ingresa la fecha de nacimiento.
                         </div>

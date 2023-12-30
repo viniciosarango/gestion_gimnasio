@@ -12,7 +12,7 @@
         <a href="{{ url_for('cumpleanios_proximos') }}" class="btn btn-info">Cumpleaños</a>
     </div>
     
-    <h1 class="titulos_centrados mb-3 mt-3">Lista de Clientes</h1>
+    <h1 class="titulos_centrados mb-5 mt-3">Lista de Clientes</h1>
     <form method="GET" action="{{ url_for('lista_clientes') }}" class="mb-3">
         <div class="input-group" >
             <input type="text" class="form-control" name="search" placeholder="Buscar por nombre, apellido o cédula" value="{{ request.args.get('search', '') }}">

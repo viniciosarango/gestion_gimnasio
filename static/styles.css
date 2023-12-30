@@ -98,3 +98,16 @@ body {
 .btn-danger {
     color: white; /* Cambiar a tu color deseado */
 }
+
+/* Estilos para campos deshabilitados o de solo lectura */
+input[readonly] {
+    background-color: #f0f0f0; /* Cambia este color según tus preferencias */
+    color: #666; /* Color de texto para campos deshabilitados */
+    border: 1px solid #ddd; /* Borde para campos deshabilitados */
+}
+
+/* Estilos para los mensajes de error */
+.invalid-feedback {
+    color: #dc3545; /* Color de texto para mensajes de error */
+    font-size: 80%; /* Tamaño de fuente reducido para mensajes de error */
+}

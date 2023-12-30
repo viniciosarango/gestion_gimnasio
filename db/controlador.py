@@ -38,8 +38,8 @@ def agregar_administrador_db(username, password):
         if conn:
             conn.close()
 
-from flask import abort, render_template
 
+'''
 def rol_requerido(rol_minimo):
     def decorador(func):
         @wraps(func)
@@ -50,7 +50,21 @@ def rol_requerido(rol_minimo):
             return func(*args, **kwargs)
         return wrapper
     return decorador
-
+'''
+def rol_requerido(rol_minimo):
+    def wrapper(func):
+        @wraps(func)
+        def decorated_view(*args, **kwargs):
+            if current_user.is_authenticated:
+                if not current_user.tiene_rol(rol_minimo):
+                    flash("No tienes permisos para acceder a esta página.", "danger")
+                    return redirect(url_for('index'))
+                return func(*args, **kwargs)
+            else:
+                flash("Debes iniciar sesión para acceder a esta página.", "danger")
+                return redirect(url_for('login'))
+        return decorated_view
+    return wrapper
 
 
 
@@ -102,7 +116,7 @@ def agregar_cliente_db(cedula, nombre, apellido, correo, telefono, fecha_nacimie
             conn.close()
 
 
-# Función para actualizar los datos de un cliente en la base de datos (incluyendo la foto y la fecha de nacimiento)
+
 def actualizar_cliente_db(id_cliente, cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre):
     try:
         conn = obtener_conexion()
@@ -123,6 +137,28 @@ def actualizar_cliente_db(id_cliente, cedula, nombre, apellido, correo, telefono
     finally:
         if conn:
             conn.close()
+
+def actualizar_perfil_db(id_cliente, cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre):
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            UPDATE cliente
+            SET cedula = %s, nombre = %s, apellido = %s, correo = %s, telefono = %s, fecha_nacimiento = %s, foto_nombre = %s
+            WHERE id_cliente = %s
+            """,
+            (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, id_cliente)
+        )
+
+        conn.commit()
+    except Exception as e:
+        print(f"Error al actualizar cliente en la base de datos: {e}")
+    finally:
+        if conn:
+            conn.close()
+
 
 
 def eliminar_cliente_db(id_cliente):
