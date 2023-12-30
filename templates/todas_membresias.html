@@ -3,43 +3,60 @@
 {% block title %}Todas las Membresías - Dorians Gym{% endblock %}
 
 {% block content %}
-    <h1 class="titulos_centrados">Todas las Membresías</h1>
 
-    <div class="d-flex justify-content-center mb-3 mt-3">
-        
+
+
+    
+    
+    <div class="d-flex justify-content-end mb-5 mt-3">
+        <a href="{{ url_for('gestion_membresias') }}" class="btn btn-success mx-2">Gestión Membresías</a>
         <a href="{{ url_for('membresias_proximas_a_caducar') }}" class="btn btn-warning mx-2">Membresías por Caducar</a>
         <a href="{{ url_for('membresias_caducadas') }}" class="btn btn-danger mx-2">Membresías Caducadas</a>
-        <a href="{{ url_for('todas_membresias') }}" class="btn btn-info">Todas las Membresías</a>
+        
     </div>
+
+    <h1 class="titulos_centrados">Todas las Membresías</h1>
+
 
     <div class="table-responsive">
         <table class="table table-striped">
             <thead>
+   
                 <tr>
                     <th>Id Membresia</th>
-                    <th>Fecha de Inicio</th>
-                    <th>ID de Cliente</th>
-                    <th>Nombre de Cliente</th>
-                    <th>Nombre del Plan</th>
+                    <th>Fecha Inicio</th>
+                    <th>ID Cliente</th>
+                    <th>Nombre </th>
+                    <th>Plan</th>
                     <th>Fecha Final</th>
-                    <th>Precio del Plan</th>
-                    <th>Editar membresia</th>
+                    <th>Precio</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 {% for membresia in membresias %}
-                    <tr>
-                        <td>{{ membresia.id_membresia }}</td>
-                        <td>{{ membresia.fecha_inicio }}</td>
-                        <td>{{ membresia.id_cliente }}</td>
-                        <td>{{ membresia.nombre_cliente }}</td>
-                        <td>{{ membresia.nombre_plan }}</td>
-                        <td>{{ membresia.fecha_final }}</td>
-                        <td>{{ membresia.precio_plan }}</td>
-                        <td>
-                            <a href="{{ url_for('editar_membresia_route', id_membresia=membresia.id_membresia) }}" class="btn btn-primary d-block w-100 mb-2">Editar</a>
-                        </td>
-                    </tr>
+                <tr>
+                    <td>{{ membresia.id_membresia }}</td>
+                    <td>{{ membresia.fecha_inicio }}</td>
+                    <td>{{ membresia.id_cliente }}</td>
+                    <td>{{ membresia.nombre_cliente }} {{ membresia.apellido_cliente }}</td>
+                    <td>{{ membresia.nombre_plan }}</td>
+                    
+                    
+                    <td>{{ membresia.fecha_final }}</td>
+                    <td>{{ membresia.precio_plan }}</td>
+                    <td>
+                        {% if membresia.vigente %}
+                            Vigente
+                        {% else %}
+                            Caducada
+                        {% endif %}
+                    </td>
+                    <td>                            
+                        <a href="{{ url_for('editar_membresia_route', id_membresia=membresia.id_membresia) }}" class="btn btn-primary">Editar</a>
+                    </td>
+                </tr>
                 {% endfor %}
             </tbody>
         </table>

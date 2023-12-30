@@ -4,7 +4,7 @@ from db.database import obtener_conexion
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
 from db.forms import AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm, LoginForm, RegistroClienteForm, AgregarAdminForm
-from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_id_cliente_por_usuario, eliminar_cliente_db, registrar_cliente, verificar_membresias_vencidas, buscar_cliente_por_id_con_membresias, editar_membresia, agregar_administrador_db, obtener_roles_del_usuario, rol_requerido, actualizar_estado_cliente
+from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_id_cliente_por_usuario, eliminar_cliente_db, registrar_cliente, verificar_membresias_vencidas, buscar_cliente_por_id_con_membresias, editar_membresia, agregar_administrador_db, obtener_roles_del_usuario, rol_requerido, actualizar_estado_cliente, calcular_estado_membresia
 from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
 from db.models import db, Usuario, Membresia, Cliente
@@ -218,15 +218,32 @@ def membresias_cliente(id_cliente):
         return render_template('acceso_restringido.html'), 403
 
     membresias = obtener_membresias_cliente(id_cliente)
-
-    if not membresias:
-        flash('No se encontraron membresías para el cliente', 'warning')
-        return redirect(url_for('buscar_clientes_form'))
-
+    
     id_planes = [membresia.id_plan for membresia in membresias]
     nombres_y_precios_planes = obtener_nombres_y_precios_planes(id_planes)
 
     return render_template('membresias_cliente.html', cliente=cliente, membresias=membresias, nombres_y_precios_planes=nombres_y_precios_planes)
+
+
+@app.route('/membresias_activas_cliente/<int:id_cliente>')
+@login_required
+def membresias_activas_cliente(id_cliente):
+    
+    if current_user.role == 'admin':        
+        cliente = Cliente.obtener_cliente_por_id(id_cliente)
+        membresias_activas = cliente.obtener_membresias_activas()
+        return render_template('membresias_activas_cliente.html', membresias_activas=membresias_activas, cliente=cliente)    
+    
+    elif current_user.role == 'cliente' and current_user.id_cliente == id_cliente:        
+        cliente = Cliente.obtener_cliente_por_id(id_cliente)
+        membresias_activas = cliente.obtener_membresias_activas()
+        return render_template('membresias_activas_cliente.html', membresias_activas=membresias_activas, cliente=cliente)
+    
+    
+    flash('No tienes permisos para ver las membresías activas de este cliente', 'warning')
+    return redirect(url_for('index'))
+
+
 
 
 @app.route('/todas_membresias')
@@ -239,6 +256,7 @@ def todas_membresias():
         return redirect(url_for('index'))
     
     membresias_extendidas = []
+    current_time = datetime.utcnow()
 
     id_planes = [membresia.id_plan for membresia in membresias]    
     nombres_precios_planes = obtener_nombres_y_precios_planes(id_planes)
@@ -247,6 +265,8 @@ def todas_membresias():
         cliente = buscar_cliente_por_id(membresia.id_cliente)
         nombre_cliente = f"{cliente['nombre']} {cliente['apellido']}" if cliente else "Cliente no encontrado"
         
+        vigente = membresia.fecha_final >= current_time.date()
+        
         membresias_extendidas.append({
             'id_membresia': membresia.id_membresia,
             'fecha_inicio': membresia.fecha_inicio,
@@ -254,20 +274,26 @@ def todas_membresias():
             'id_cliente': membresia.id_cliente,
             'nombre_cliente': nombre_cliente,
             'id_plan': membresia.id_plan,
-            'nombre_plan': nombres_precios_planes.get(membresia.id_plan, {}).get('nombre', "Plan no encontrado"),
-            'precio_plan': nombres_precios_planes.get(membresia.id_plan, {}).get('precio', "Precio no encontrado")
+            'nombre_plan': nombres_precios_planes.get(membresia.id_plan, {}).get('nombre_plan', "Plan no encontrado"),
+            'precio_plan': nombres_precios_planes.get(membresia.id_plan, {}).get('precio', "Precio no encontrado"),
+             'vigente': vigente
         })
 
-    return render_template('todas_membresias.html', membresias=membresias_extendidas)
+    return render_template('todas_membresias.html', membresias=membresias_extendidas, current_time=current_time)
 
 
 @app.route('/membresias_proximas_a_caducar')
 @rol_requerido('admin')
 def membresias_proximas_a_caducar():    
     membresias = Membresia.obtener_membresias_proximas_a_caducar()
+    
     if not membresias:
         flash('No se encontraron membresías próximas a caducar', 'warning')
-        return redirect(url_for('buscar_clientes_form'))    
+        return redirect(url_for('gestion_membresias'))    
+    
+    for membresia in membresias:        
+        membresia.vigente = calcular_estado_membresia(membresia) 
+    
     return render_template('membresias_proximas_a_caducar.html', membresias=membresias)
 
 
@@ -277,7 +303,7 @@ def membresias_caducadas():
     membresias = Membresia.obtener_membresias_caducadas()
     if not membresias:
         flash('No se encontraron membresías caducadas', 'warning')
-        return redirect(url_for('buscar_clientes_form'))
+        return redirect(url_for('gestion_membresias'))
     return render_template('membresias_caducadas.html', membresias=membresias)
 
 
@@ -349,7 +375,7 @@ def planes_lista():
 
 @app.route('/gestion_membresias', methods=['GET', 'POST'])
 @rol_requerido('admin')
-def buscar_clientes_form():
+def gestion_membresias():
     resultados = []
 
     if request.method == 'POST':
@@ -398,17 +424,13 @@ def reactivar_cliente(id_cliente):
 
 def datos_cliente(id_cliente):
     cliente = buscar_cliente_por_id_con_membresias(id_cliente)
-
-    if cliente:
-        membresias_activas = Membresia.obtener_membresias_activas_cliente(id_cliente)
-        if current_user.role == 'cliente' and current_user.id_cliente == id_cliente:
-            id_planes = [membresia.id_plan for membresia in membresias_activas]
-            nombres_y_precios_planes = obtener_nombres_y_precios_planes(id_planes)
-            return render_template('datos_cliente.html', cliente=cliente, membresias_activas=membresias_activas, nombres_y_precios_planes=nombres_y_precios_planes)
+    if cliente:        
+        if current_user.role == 'cliente' and current_user.id_cliente == id_cliente:        
+            membresias_activas = Membresia.obtener_membresias_activas_cliente(id_cliente)
+            return render_template('datos_cliente.html', cliente=cliente, membresias_activas=membresias_activas  )
         elif current_user.role == 'admin':
-            id_planes = [membresia.id_plan for membresia in membresias_activas]
-            nombres_y_precios_planes = obtener_nombres_y_precios_planes(id_planes)
-            return render_template('datos_cliente.html', cliente=cliente, membresias_activas=membresias_activas, nombres_y_precios_planes=nombres_y_precios_planes)
+            membresias_activas = Membresia.obtener_membresias_activas_cliente(id_cliente)            
+            return render_template('datos_cliente.html', cliente=cliente, membresias_activas=membresias_activas)
         else:
             flash('Acceso no autorizado.', 'danger')
             return redirect(url_for('datos_cliente', id_cliente=current_user.id_cliente))

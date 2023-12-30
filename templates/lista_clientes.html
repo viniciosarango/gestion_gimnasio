@@ -3,15 +3,16 @@
 {% block title %}Lista de Clientes - Dorians Gym{% endblock %}
 
 {% block content %}
-    <h1 class="titulos_centrados">Lista de Clientes</h1>
+    
 
-    <div class="d-flex justify-content-center mb-3 mt-3">
+    <div class="d-flex justify-content-end mb-5 mt-3">
         <a href="{{ url_for('agregar_cliente') }}" class="btn btn-success">Añadir Cliente</a>
         
         <a href="{{ url_for('lista_clientes_inactivos') }}" class="btn btn-danger mx-2">Clientes Inactivos</a>
         <a href="{{ url_for('cumpleanios_proximos') }}" class="btn btn-info">Cumpleaños</a>
     </div>
     
+    <h1 class="titulos_centrados mb-3 mt-3">Lista de Clientes</h1>
     <form method="GET" action="{{ url_for('lista_clientes') }}" class="mb-3">
         <div class="input-group" >
             <input type="text" class="form-control" name="search" placeholder="Buscar por nombre, apellido o cédula" value="{{ request.args.get('search', '') }}">

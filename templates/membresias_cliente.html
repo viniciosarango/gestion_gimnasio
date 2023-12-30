@@ -7,12 +7,33 @@
 {% block title %}Membresías del Cliente - Dorians Gym{% endblock %}
 
 {% block content %}
-    <div class="container mt-4">
-        <h1 class="mb-4">Membresías del Cliente: {{ cliente.nombre }} {{ cliente.apellido }}</h1>
+    
 
-        <div class="row">
-            <div class="col-md-12">
-                <table class="table table-bordered table-striped">
+<div class="d-flex justify-content-end mb-5 mt-3">
+    <a href="{{ url_for('membresias_activas_cliente', id_cliente=cliente['id_cliente']) }}" class="btn btn-warning mx-2">Ver Membresías Activas</a>
+    {% if current_user.tiene_rol('admin') %}
+    <a href="{{ url_for('gestion_membresias') }}" class="btn btn-info mx-2">VOLVER</a>
+    {%endif%}
+</div>
+
+<div class="container mt-4">
+
+   
+
+    <div class="row justify-content-center">
+      <div class="col-md-8">
+        <div class="card">
+          <div class="card-header">
+            <h1 class="mb-0 text-center">Historial de Membresías </h1>
+            <h3 class="mb-0 text-center"> {{ cliente.nombre }} {{ cliente.apellido }} </h3>
+            
+          </div>
+          <div class="card-body">
+            
+
+                {% if membresias %}
+
+                <table class="table">
                     <thead class="thead-dark">
                         <tr>
                             <th>ID de Membresía</th>
@@ -21,25 +42,33 @@
                             <th>Fecha de Inicio</th>
                             <th>Fecha Final</th>
                             <th>Precio del Plan</th>
-                            <th>Editar membresia</th>
+                            {% if current_user.tiene_rol('admin') %}
+                                <th>Editar membresia</th>
+                            {% endif %}
                         </tr>
                     </thead>
                     <tbody>
                         {% for membresia in membresias %}
                             <tr>
                                 <td>{{ membresia.id_membresia }}</td>
-                                <td>{{ nombres_y_precios_planes.get(membresia.id_plan).get('nombre') }}</td>
+                                <td>{{ membresia.precio_plan }}</td> <!-- nombre plan -->
                                 <td>{{ membresia.fecha_inicio }}</td>
                                 <td>{{ membresia.fecha_final }}</td>
                                 <td>{{ nombres_y_precios_planes[membresia.id_plan].get('precio') }}</td>
-                                <td>
-                                    <!-- Agrega el botón de edición -->
+                                {% if current_user.tiene_rol('admin') %}
+                                <td>                                    
                                     <a href="{{ url_for('editar_membresia_route', id_membresia=membresia.id_membresia) }}" class="btn btn-primary">Editar</a>
-                                  </td>
+                                </td>
+                                {% endif %}
                             </tr>
                         {% endfor %}
                     </tbody>
                 </table>
+
+                {% else %}
+                    <p>No tienes membresías en este momento.</p>
+                {% endif %}
+
             </div>
         </div>
     </div>

@@ -284,7 +284,7 @@ def obtener_nombres_y_precios_planes(id_planes):
                 WHERE id_plan IN %s
             """, (tuple(id_planes),))
             planes_data = cursor.fetchall()
-            planes_dict = {plan[0]: {'nombre': plan[1], 'precio': plan[2]} for plan in planes_data}
+            planes_dict = {plan[0]: {'nombre_plan': plan[1], 'precio': plan[2]} for plan in planes_data}
             return planes_dict
     except Exception as e:
         print(f"Error al obtener los nombres y precios de los planes: {e}")
@@ -310,8 +310,14 @@ def crear_membresia(id_cliente, id_plan, fecha_inicio):
 
             print(f"Fecha actual: {fecha_actual}")
             print(f"Fecha final: {fecha_final}")
+            
+            cursor.execute(
+                "UPDATE cliente SET estado = 1 WHERE id_cliente = %s",
+                (id_cliente,)
+            )
+            conn.commit()
 
-            actualizar_estado_cliente(id_cliente)
+            #actualizar_estado_cliente(id_cliente)
 
     except pymysql.Error as error:
         print(f"Error al crear membresía: {error}")
@@ -325,6 +331,7 @@ def actualizar_estado_cliente(id_cliente):
         membresias_activas = cliente.obtener_membresias_activas()
         estado = 1 if membresias_activas else 0
         cliente.actualizar_estado(estado)
+
 
 
 
@@ -349,6 +356,11 @@ def editar_membresia(id_membresia, nueva_fecha_final):
     finally:
         conn.close()
 
+from datetime import datetime
+
+def calcular_estado_membresia(membresia):
+    fecha_actual = datetime.utcnow().date()
+    return membresia.fecha_final >= fecha_actual
 
 
 

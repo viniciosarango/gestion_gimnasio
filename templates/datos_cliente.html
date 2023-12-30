@@ -45,24 +45,28 @@ content %}
             </li>
           </ul>
 
+          
+
           <div class="mt-4">
             <h4>Membresías Activas</h4>
             <ul class="list-group">
+              
+              
               {% for membresia in membresias_activas %}
-              <li class="list-group-item">
-                <strong>Fecha de Inicio:</strong> {{ membresia.fecha_inicio }} |
-                <strong>Fecha de Finalización:</strong> {{ membresia.fecha_final
-                }} | <strong>Nombre del Plan:</strong> {{
-                nombres_y_precios_planes.get(membresia.id_plan,
-                {}).get('nombre', 'No especificado') }} |
-                <strong>Precio del Plan:</strong> {{
-                nombres_y_precios_planes.get(membresia.id_plan,
-                {}).get('precio', 'No especificado') }}
-              </li>
+                <li class="list-group-item">
+                  <strong>Nombre del Plan:</strong> {{ membresia.nombre_plan }} | 
+                  <strong>Fecha de Inicio:</strong> {{ membresia.fecha_inicio }} |
+                  <strong>Fecha de Finalización:</strong> {{ membresia.fecha_final }} |                  
+                  <strong>Precio del Plan:</strong> {{ membresia.precio_plan }}
+                </li>
               {% endfor %}
             </ul>
           </div>
-        </div>
+
+        
+          
+
+
       </div>
     </div>
   </div>

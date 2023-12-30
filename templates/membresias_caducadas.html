@@ -4,14 +4,18 @@
 
 {% block content %}
 
-    <h1 class="titulos_centrados">Membresías Caducadas</h1>
+    
         <!-- Botones adicionales centrados con espacio vertical -->
-    <div class="d-flex justify-content-center mb-3 mt-3">
+    <div class="d-flex justify-content-end mb-5 mt-3">
         
+        <a href="{{ url_for('gestion_membresias') }}" class="btn btn-success mx-2">Gestión Membresías</a>
         <a href="{{ url_for('membresias_proximas_a_caducar') }}" class="btn btn-warning mx-2">Membresías por Caducar</a>
-        <a href="{{ url_for('membresias_caducadas') }}" class="btn btn-danger mx-2">Membresías Caducadas</a>
+        
         <a href="{{ url_for('todas_membresias') }}" class="btn btn-info">Todas las Membresías</a>
+        
     </div>
+
+    <h1 class="titulos_centrados mt=5 mb=3">Membresías Caducadas</h1>
 
     <div class="table-responsive">
         <table class="table table-striped">
@@ -33,10 +37,12 @@
                         <td>{{ membresia.id_membresia }}</td>
                         <td>{{ membresia.fecha_inicio }}</td>
                         <td>{{ membresia.id_cliente }}</td>
+                        <td>{{ membresia.nombre_plan }}</td>  
                         <td>{{ membresia.nombre_cliente }}</td>
-                        <td>{{ membresia.nombre_plan }}</td>
+                        
                         <td>{{ membresia.fecha_final }}</td>
                         <td>{{ membresia.precio_plan }}</td>
+                        
                         <td>                            
                             <a href="{{ url_for('editar_membresia_route', id_membresia=membresia.id_membresia) }}" class="btn btn-primary">Editar</a>
                         </td>

@@ -17,7 +17,7 @@
                   <li class="list-group-item">Nombre del Cliente: {{ cliente.nombre }} {{ cliente.apellido }}</li>
                   <li class="list-group-item">Nombre del Plan: 
                     {% if membresia.id_plan in nombres_y_precios_planes %}
-                      {{ nombres_y_precios_planes[membresia.id_plan]['nombre'] }}
+                      {{ nombres_y_precios_planes[membresia.id_plan]['nombre_plan'] }}
                     {% else %}
                       No especificado
                     {% endif %}

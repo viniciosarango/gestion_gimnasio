@@ -50,10 +50,9 @@ class Membresia:
         self.nombre_cliente = nombre_cliente
         self.nombre_plan = nombre_plan
     
+    
     @staticmethod
     def crear_instancia_membresia(fila):
-        nombre_plan = fila[7] if len(fila) > 7 else None
-        nombre_cliente = fila.get('nombre_cliente') if 'nombre_cliente' in fila else None
         return Membresia(
             id_membresia=fila[0],
             fecha_inicio=fila[1],
@@ -61,13 +60,10 @@ class Membresia:
             id_cliente=fila[3],
             id_plan=fila[4],
             precio_plan=fila[5],
-            #nombre_cliente=fila[6],
-            #nombre_plan=fila[7] if len(fila) > 7 else None
-            nombre_cliente=nombre_cliente,
-            nombre_plan=nombre_plan
+            nombre_plan=fila[6],  
+            nombre_cliente=fila[7] if len(fila) > 7 else None
         )
 
-    
 
     @classmethod
     def from_dict(cls, membresia_dict):
@@ -87,7 +83,7 @@ class Membresia:
             conn = obtener_conexion()
             with conn.cursor() as cursor:
                 cursor.execute("""
-                    SELECT membresia.*, planes.precio
+                    SELECT membresia.*, planes.nombre_plan, planes.precio
                     FROM membresia
                     JOIN planes ON membresia.id_plan = planes.id_plan
                     WHERE membresia.id_cliente = %s
@@ -109,19 +105,19 @@ class Membresia:
             conn = obtener_conexion()
             with conn.cursor() as cursor:
                 cursor.execute("""
-                    SELECT membresia.*, planes.precio, planes.nombre_plan, cliente.nombre AS nombre_cliente, cliente.apellido
+                    SELECT membresia.*, planes.precio AS precio_plan, planes.nombre_plan AS nombre_plan, cliente.nombre AS nombre_cliente, cliente.apellido
                     FROM membresia
                     JOIN planes ON membresia.id_plan = planes.id_plan
+                    JOIN cliente ON membresia.id_cliente = cliente.id_cliente
                     WHERE membresia.id_cliente = %s
                     AND membresia.fecha_final >= CURDATE()  
                     ORDER BY fecha_final DESC
                 """, (id_cliente,))
-                membresias_data = cursor.fetchall()                
-                membresias = [cls.crear_instancia_membresia(fila) for fila in membresias_data]                
-                for m in membresias:
-                    print(f"ID: {m.id_membresia}, Nombre del Plan: {m.nombre_plan}") 
+                membresias_data = cursor.fetchall()
+                
+                membresias = [cls.crear_instancia_membresia(fila) for fila in membresias_data]
+                
                 return membresias
-        
         except Exception as e:
             print(f"Error al obtener las membresías activas del cliente: {e}")
             return []
@@ -129,12 +125,15 @@ class Membresia:
             if conn:
                 conn.close()
 
+
+
+
     @classmethod
     def obtener_todas_membresias(cls):
         try:
             conn = obtener_conexion()
             with conn.cursor() as cursor:
-                cursor.execute("SELECT * FROM membresia")
+                cursor.execute("SELECT * FROM membresia ORDER BY fecha_inicio DESC")
                 membresias_data = cursor.fetchall()
                 print('Resultados directos de la base de datos:', membresias_data)  # Agrega este print para verificar qué está devolviendo la base de datos
                 membresias = [cls(*membresia, precio_plan=None) for membresia in membresias_data]
@@ -276,6 +275,7 @@ class Cliente:
                     (nuevo_estado, self.id_cliente)
                 )
                 conn.commit()
+                self.estado = nuevo_estado
         except pymysql.Error as error:
             print(f"Error al actualizar el estado del cliente: {error}")
         finally:

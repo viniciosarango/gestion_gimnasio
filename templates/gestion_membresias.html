@@ -3,17 +3,19 @@
 {% block title %}Gestión de Membresías - Dorians Gym{% endblock %}
 
 {% block content %}
-    <h1 class="titulos_centrados">Gestión de Membresías</h1>
+    
 
     
     <!-- Botones adicionales centrados con espacio vertical -->
-<div class="d-flex justify-content-center mb-3 mt-3">
+<div class="d-flex justify-content-end mb-5 mt-3">
     
     <a href="{{ url_for('membresias_proximas_a_caducar') }}" class="btn btn-warning mx-2">Membresías por Caducar</a>
     <a href="{{ url_for('membresias_caducadas') }}" class="btn btn-danger mx-2">Membresías Caducadas</a>
     <a href="{{ url_for('todas_membresias') }}" class="btn btn-info">Todas las Membresías</a>
 </div>
 
+
+<h1 class="titulos_centrados mt=5 mb=3">Gestión de Membresías</h1>
 
     <!-- Formulario de búsqueda -->
     <h2>Buscar Clientes</h2>
@@ -39,7 +41,8 @@
                         <th>Apellido</th>
                         <th>Cédula</th>
                         <th>Acciones</th>
-                        <th>Ver Membresías</th>
+                        <th>Membresías Activas</th>
+                        <th>Historial de Membresías</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -51,7 +54,8 @@
                             <td>{{ cliente[3] }}</td>
                             <!-- Agregar un enlace para asignar membresía -->
                             <td><a href="{{ url_for('asignar_membresia', id_cliente=cliente[0]) }}" class="btn btn-success btn-sm">Asignar Membresía</a></td>
-                            <td><a href="{{ url_for('membresias_cliente', id_cliente=cliente[0]) }}" class="btn btn-info btn-sm">Ver Membresías</a></td>
+                            <td><a href="{{ url_for('membresias_activas_cliente', id_cliente=cliente[0]) }}" class="btn btn-warning btn-sm">Membresías Activas</a></td>
+                            <td><a href="{{ url_for('membresias_cliente', id_cliente=cliente[0]) }}" class="btn btn-info btn-sm">Historial de Membresías</a></td>
                         </tr>
                     {% endfor %}
                 </tbody>
