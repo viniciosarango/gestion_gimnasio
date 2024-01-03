@@ -130,6 +130,16 @@ def actualizar_cliente_db(id_cliente, cedula, nombre, apellido, correo, telefono
             """,
             (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, id_cliente)
         )
+        
+         # Actualizar datos en la tabla usuario
+        cursor.execute(
+            """
+            UPDATE usuario
+            SET username = %s, password = %s, role = %s
+            WHERE id_cliente = %s
+            """,
+            (correo, cedula, 'cliente', id_cliente)
+        )
 
         conn.commit()
     except Exception as e:
@@ -150,6 +160,16 @@ def actualizar_perfil_db(id_cliente, cedula, nombre, apellido, correo, telefono,
             WHERE id_cliente = %s
             """,
             (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, id_cliente)
+        )
+        
+        # Actualizar datos en la tabla usuario
+        cursor.execute(
+            """
+            UPDATE usuario
+            SET username = %s
+            WHERE id_cliente = %s
+            """,
+            (correo, id_cliente)
         )
 
         conn.commit()

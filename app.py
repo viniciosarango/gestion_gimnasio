@@ -452,7 +452,7 @@ def agregar_cliente():
         telefono = form.telefono.data
         fecha_nacimiento = form.fecha_nacimiento.data
 
-        # Manejo de la carga de archivos (foto de perfil)
+        
         if 'foto' in request.files:
             foto = request.files['foto']
             if foto.filename != '' and allowed_file(foto.filename):
@@ -523,67 +523,7 @@ def actualizar_cliente(id_cliente):
 
     return render_template('actualizar_cliente.html', form=form)
 
-'''
-@app.route('/actualizar_perfil/<int:id_cliente>', methods=['GET', 'POST'])
-@rol_requerido('cliente')
-def actualizar_perfil(id_cliente):
-    
-    print(f"Debug: ID Cliente en la sesión: {session.get('id_cliente')}")
-    print(f"Debug: ID Cliente en la URL: {id_cliente}")
-        
-    if 'id_cliente' not in session or id_cliente != session['id_cliente']:        
-        print("Debug: No autorizado, redirigiendo a datos_cliente")
-        flash("No estás autorizado para realizar esta acción.", "error")
-        return redirect((url_for('datos_cliente', id_cliente=id_cliente)))
-    
-    form = AgregarClienteForm()    
-    cliente = buscar_cliente_por_id(id_cliente)
 
-    if cliente is None:
-        print("Debug: Cliente no encontrado, redirigiendo a datos_cliente")
-        flash("Cliente no encontrado.", "error")
-        return redirect((url_for('datos_cliente', id_cliente=id_cliente)))
-
-    if request.method == 'POST' and form.validate_on_submit():
-        
-        if 'foto' in request.files:
-            foto = request.files['foto']
-            if foto.filename != '' and allowed_file(foto.filename):
-                filename = secure_filename(foto.filename)
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                foto.save(filepath)
-            else:
-                filename = None
-        else:
-            filename = None
-        
-        actualizar_perfil_db(
-            id_cliente,
-            form.cedula.data,
-            form.nombre.data,
-            form.apellido.data,
-            form.correo.data,
-            form.telefono.data,
-            form.fecha_nacimiento.data,  
-            filename
-        )
-
-        print("Debug: Redirigiendo a datos_cliente después de actualizar perfil")
-        return redirect(url_for('datos_cliente', id_cliente=id_cliente))
-        
-    # Llenar el formulario con los datos actuales del cliente
-    form.cedula.data = cliente.get('cedula', '')
-    form.nombre.data = cliente.get('nombre', '')
-    form.apellido.data = cliente.get('apellido', '')
-    form.correo.data = cliente.get('correo', '')
-    form.telefono.data = cliente.get('telefono', '')
-    
-    fecha_nacimiento = cliente.get('fecha_nacimiento')
-    if fecha_nacimiento is not None:
-        form.fecha_nacimiento.data = fecha_nacimiento
-
-    return render_template('actualizar_perfil_cliente.html', form=form)
-'''
 
 @app.route('/actualizar_perfil/<int:id_cliente>', methods=['GET', 'POST'])
 @rol_requerido('cliente')
