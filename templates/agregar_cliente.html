@@ -6,6 +6,29 @@
 
 
 
+<script>
+    $(document).ready(function() {
+        $('#cedula').on('input', function() {
+            var cedula = $(this).val();
+    
+            $.ajax({
+                type: 'POST',
+                url: '/verificar_cedula',
+                data: {'cedula': cedula},
+                success: function(response) {
+                    if (response.unico) {
+                        $('#mensaje-cedula').text('Cédula válida.').removeClass('error').addClass('success');
+                    } else {
+                        $('#mensaje-cedula').text(response.mensaje).removeClass('success').addClass('error');
+                    }
+                }
+            });
+        });
+    });
+    </script>
+
+    
+
 <div class="d-flex justify-content-end mb-3 mt-3">
     <a href="{{ url_for('lista_clientes') }}" class="btn btn-primary mx-2 ml-auto">Volver a Clientes</a>
 </div>
@@ -23,7 +46,7 @@
                         {{ form.cedula.label(class="form-label") }}
                         {{ form.cedula(class="form-control form-control-sm") }}
                     </div>
-                    
+                    <div id="mensaje-cedula"></div>
                     <div class="mb-3">
                         {{ form.nombre.label(class="form-label") }}
                         {{ form.nombre(class="form-control form-control-sm") }}
@@ -61,4 +84,20 @@
             </div>
         </div>
     </div>
-{% endblock %}
+
+    <!-- Agrega este bloque para los mensajes flash -->
+    <div class="container">
+        {% with messages = get_flashed_messages() %}
+            {% if messages %}
+                <ul class="flashes">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+            {% endif %}
+        {% endwith %}
+    </div>
+    
+    <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>  
+
+    {% endblock %}

@@ -1,3 +1,4 @@
+
 import pymysql
 from datetime import datetime, timedelta, date
 from db.database import obtener_conexion
@@ -5,6 +6,7 @@ from db.database import obtener_conexion
 from flask_login import UserMixin
 from werkzeug.security import check_password_hash
 from flask_sqlalchemy import SQLAlchemy
+
 
 
 
@@ -29,8 +31,7 @@ class Usuario(db.Model, UserMixin):
     def is_anonymous(self):
         return False
 
-    def check_password(self, password):
-        # Implementa la verificación de contraseña
+    def check_password(self, password):        
         return check_password_hash(self.password, password)
     
     def tiene_rol(self, rol):
@@ -236,17 +237,12 @@ class Membresia:
         finally:
             conn.close()
 
-    
 
-
-
-
-
-
-class Cliente:
+class Cliente(UserMixin):
     def __init__(self, id_cliente, cedula, nombre, apellido, correo, telefono, estado, foto_nombre, fecha_nacimiento):
         self.id_cliente = id_cliente
-        self.cedula = cedula
+        #self.cedula = cedula
+        cedula = db.Column(db.String(20), unique=True, nullable=False)
         self.nombre = nombre
         self.apellido = apellido
         self.correo = correo
@@ -357,6 +353,22 @@ class Cliente:
         finally:
             if conn:
                 conn.close()
+    
+    @staticmethod
+    def cedula_unica(cedula):
+        try:
+            conn = obtener_conexion()
+            with conn.cursor() as cursor:
+                cursor.execute("SELECT * FROM cliente WHERE cedula = %s", (cedula,))
+                cliente_existente = cursor.fetchone()
+                return cliente_existente is None
+        except Exception as e:
+            print(f"Error al verificar unicidad de cédula: {e}")
+            return False
+        finally:
+            if conn:
+                conn.close()
+
 
 
 

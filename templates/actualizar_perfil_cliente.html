@@ -64,6 +64,14 @@
                         {{ form.foto(class="form-control form-control-sm") }}
                     </div>
 
+                    <div class="mb-3">
+                        {{ form.nueva_contrasena.label(class="form-label") }}
+                        {{ form.nueva_contrasena(class="form-control form-control-sm", placeholder="Nueva Contraseña") }}
+                        <div class="invalid-feedback">
+                            Ingresa una nueva contraseña válida.
+                        </div>
+                    </div>
+
                     <div class="mb-3 text-center">
                         {{ form.submit(class="btn btn-primary") }}
                     </div>

@@ -8,13 +8,18 @@ from functools import wraps
 import base64
 from datetime import datetime, time
 from datetime import timedelta
-from db.models import Membresia, Usuario, db, Cliente
+
+from .models import db, Membresia, Usuario, Cliente
+
 from flask_login import login_required, current_user
-from werkzeug.security import check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 import traceback
 import random
 import string
 from functools import wraps
+from sqlalchemy.exc import IntegrityError
+
+
 
 
 def agregar_administrador_db(username, password):
@@ -39,18 +44,6 @@ def agregar_administrador_db(username, password):
             conn.close()
 
 
-'''
-def rol_requerido(rol_minimo):
-    def decorador(func):
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            if not current_user.tiene_rol(rol_minimo):
-                
-                return render_template('acceso_restringido.html')
-            return func(*args, **kwargs)
-        return wrapper
-    return decorador
-'''
 def rol_requerido(rol_minimo):
     def wrapper(func):
         @wraps(func)
@@ -74,22 +67,115 @@ def obtener_roles_del_usuario(user):
     return []
 
 
+def validar_cedula(cedula):
+    if len(cedula) != 10 or not cedula.isdigit():
+        flash("Cédula inválida. Debe ser un número de 10 dígitos.", "error")
+        return False
+    total = 0
+    coeficientes = [2, 1, 2, 1, 2, 1, 2, 1, 2]    
+    for i in range(9):
+        resultado = int(cedula[i]) * coeficientes[i]
+        total += resultado if resultado < 10 else resultado - 9    
+    digito_verificador = 10 - (total % 10)
+    digito_verificador = 0 if digito_verificador == 10 else digito_verificador    
+    resultado = digito_verificador == int(cedula[9])
+    #flash(f"Validación para cédula {cedula}: {resultado}", "success" if resultado else "error")
+    return resultado
 
 
 
-# Función para agregar cliente a la base de datos
+def cedula_unica(cedula):
+    try:
+        conn = obtener_conexion()
+        with conn.cursor() as cursor:
+            cursor.execute("SELECT * FROM cliente WHERE cedula = %s", (cedula,))
+            cliente_existente = cursor.fetchone()
+            print(f"Valor de cliente_existente: {cliente_existente}")
+            return cliente_existente is None
+    except Exception as e:
+        print(f"Error al verificar unicidad de cédula: {e}")
+        return False
+    finally:
+        if conn:
+            conn.close()
+
+
+
 def agregar_cliente_db(cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre):
+    if not validar_cedula(cedula):
+        flash("Cédula inválida. Debe ser un número de 10 dígitos.", "error")
+        return
+
+    if not cedula_unica(cedula):
+        flash("Error: La cédula ya está registrada en el sistema.", "error")
+        return
+    
     try:
         conn = obtener_conexion()
         cursor = conn.cursor()
-
-        # Insertar cliente en la tabla Cliente
+                
+        cursor.execute("SELECT id_cliente FROM cliente WHERE cedula = %s", (cedula,))
+        id_cliente_existente = cursor.fetchone()
+        if id_cliente_existente:
+            flash("Error: La cédula ya está registrada en el sistema", "error")
+            return
+        
         cursor.execute(
             """
             INSERT INTO cliente (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, estado)
             VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
             """,
             (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, 0)  
+        )
+
+        conn.commit()
+        
+        cursor.execute("SELECT LAST_INSERT_ID()")
+        id_cliente = cursor.fetchone()[0]
+        
+        cursor.execute(
+            """
+            INSERT INTO usuario (username, password, role, id_cliente)
+            VALUES (%s, %s, %s, %s)
+            """,
+            (correo, cedula, 'cliente', id_cliente)
+        )
+
+        conn.commit()
+        flash("Cliente registrado exitosamente", "success")
+
+    except IntegrityError:        
+        flash("Error: La cédula ya está registrada en el sistema.", "error")
+    
+    except Exception as e:
+        print(f"Error al agregar cliente en la base de datos: {e}")
+        flash("Error al procesar la solicitud.", "error")
+    
+    finally:
+        if conn:
+            conn.close()
+
+
+def registrar_cliente(cedula, nombre, apellido, correo, telefono, fecha_nacimiento, username, password):
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+        
+        if not validar_cedula(cedula):
+            flash("Cédula inválida. Debe ser un número de 10 dígitos.", "error")
+            return False
+        
+        if not cedula_unica(cedula):
+            flash("Error: La cédula ya está registrada en el sistema.", "error")
+            return False
+
+        # Insertar cliente en la tabla Cliente
+        cursor.execute(
+            """
+            INSERT INTO cliente (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, estado)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """,
+            (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, 0)  # Estado inactivo al inicio
         )
 
         conn.commit()
@@ -104,10 +190,11 @@ def agregar_cliente_db(cedula, nombre, apellido, correo, telefono, fecha_nacimie
             INSERT INTO usuario (username, password, role, id_cliente)
             VALUES (%s, %s, %s, %s)
             """,
-            (correo, cedula, 'cliente', id_cliente)
+            (username, password, 'cliente', id_cliente)
         )
 
         conn.commit()
+        flash("Cliente registrado exitosamente", "success")
 
     except Exception as e:
         print(f"Error al agregar cliente a la base de datos: {e}")
@@ -116,8 +203,7 @@ def agregar_cliente_db(cedula, nombre, apellido, correo, telefono, fecha_nacimie
             conn.close()
 
 
-
-def actualizar_cliente_db(id_cliente, cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre):
+def actualizar_cliente_db(id_cliente, cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, nueva_contrasena=None):
     try:
         conn = obtener_conexion()
         cursor = conn.cursor()
@@ -131,15 +217,25 @@ def actualizar_cliente_db(id_cliente, cedula, nombre, apellido, correo, telefono
             (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, id_cliente)
         )
         
-         # Actualizar datos en la tabla usuario
-        cursor.execute(
-            """
-            UPDATE usuario
-            SET username = %s, password = %s, role = %s
-            WHERE id_cliente = %s
-            """,
-            (correo, cedula, 'cliente', id_cliente)
-        )
+         
+        if nueva_contrasena is not None:            
+            cursor.execute(
+                """
+                UPDATE usuario
+                SET username = %s, password = %s
+                WHERE id_cliente = %s
+                """,
+                (correo, nueva_contrasena, id_cliente)
+            )
+        else:            
+            cursor.execute(
+                """
+                UPDATE usuario
+                SET username = %s
+                WHERE id_cliente = %s
+                """,
+                (correo, id_cliente)
+            )
 
         conn.commit()
     except Exception as e:
@@ -148,11 +244,14 @@ def actualizar_cliente_db(id_cliente, cedula, nombre, apellido, correo, telefono
         if conn:
             conn.close()
 
-def actualizar_perfil_db(id_cliente, cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre):
+
+
+def actualizar_perfil_db(id_cliente, cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, nueva_contrasena=None):
     try:
         conn = obtener_conexion()
         cursor = conn.cursor()
 
+        # Actualiza los campos del cliente
         cursor.execute(
             """
             UPDATE cliente
@@ -162,23 +261,58 @@ def actualizar_perfil_db(id_cliente, cedula, nombre, apellido, correo, telefono,
             (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, foto_nombre, id_cliente)
         )
         
-        # Actualizar datos en la tabla usuario
-        cursor.execute(
-            """
-            UPDATE usuario
-            SET username = %s
-            WHERE id_cliente = %s
-            """,
-            (correo, id_cliente)
-        )
+        if nueva_contrasena is not None:
+            print(f"Debug: Nueva contraseña: {nueva_contrasena}")
+
+            cursor.execute(
+                """
+                UPDATE usuario
+                SET username = %s, password = %s
+                WHERE id_cliente = %s
+                """,
+                (correo, nueva_contrasena, id_cliente)
+            )
+        elif correo != obtener_correo_por_id_cliente(id_cliente):            
+            cursor.execute(
+                """
+                UPDATE usuario
+                SET username = %s
+                WHERE id_cliente = %s
+                """,
+                (correo, id_cliente)
+            )
 
         conn.commit()
     except Exception as e:
-        print(f"Error al actualizar cliente en la base de datos: {e}")
+        print(f"Error al actualizar el perfil del cliente en la base de datos: {e}")
     finally:
         if conn:
             conn.close()
 
+
+
+def obtener_correo_por_id_cliente(id_cliente):
+    try:
+        conn = obtener_conexion()
+        cursor = conn.cursor()
+
+        cursor.execute(
+            """
+            SELECT username
+            FROM usuario
+            WHERE id_cliente = %s
+            """,
+            (id_cliente,)
+        )
+
+        correo = cursor.fetchone()
+
+        return correo[0] if correo else None
+    except Exception as e:
+        print(f"Error al obtener el correo por id_cliente: {e}")
+    finally:
+        if conn:
+            conn.close()
 
 
 def eliminar_cliente_db(id_cliente):
@@ -225,42 +359,10 @@ def eliminar_cliente_db(id_cliente):
             conn.close()
 
 
-def registrar_cliente(cedula, nombre, apellido, correo, telefono, fecha_nacimiento, username, password):
-    try:
-        conn = obtener_conexion()
-        cursor = conn.cursor()
 
-        # Insertar cliente en la tabla Cliente
-        cursor.execute(
-            """
-            INSERT INTO cliente (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, estado)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """,
-            (cedula, nombre, apellido, correo, telefono, fecha_nacimiento, 0)  # Estado inactivo al inicio
-        )
 
-        conn.commit()
 
-        # Obtener el id_cliente del cliente recién insertado
-        cursor.execute("SELECT LAST_INSERT_ID()")
-        id_cliente = cursor.fetchone()[0]
 
-        # Insertar usuario en la tabla Usuario asociado al cliente
-        cursor.execute(
-            """
-            INSERT INTO usuario (username, password, role, id_cliente)
-            VALUES (%s, %s, %s, %s)
-            """,
-            (username, password, 'cliente', id_cliente)
-        )
-
-        conn.commit()
-
-    except Exception as e:
-        print(f"Error al agregar cliente a la base de datos: {e}")
-    finally:
-        if conn:
-            conn.close()
 
 
 def obtener_id_cliente_por_usuario(user_id):
@@ -529,11 +631,11 @@ def obtener_lista_clientes(search_term=None):
         with conn.cursor() as cursor:
             if search_term:
                 # Si hay un término de búsqueda, filtrar los resultados
-                cursor.execute("SELECT * FROM cliente WHERE estado = 1 AND (cedula LIKE %s OR nombre LIKE %s OR apellido LIKE %s)",
+                cursor.execute("SELECT * FROM cliente WHERE (cedula LIKE %s OR nombre LIKE %s OR apellido LIKE %s) ORDER BY id_cliente ASC",
                                (f"%{search_term}%", f"%{search_term}%", f"%{search_term}%"))
             else:
                 # Si no hay término de búsqueda, obtener todos los clientes activos
-                cursor.execute("SELECT * FROM cliente WHERE estado = 1")
+                cursor.execute("SELECT * FROM cliente ORDER BY id_cliente DESC")
 
             clientes = cursor.fetchall()
             return clientes
@@ -545,7 +647,6 @@ def obtener_lista_clientes(search_term=None):
             conn.close()
 
 
-# En controlador.py
 def obtener_ultimos_clientes():
     try:
         conn = obtener_conexion()

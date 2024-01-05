@@ -3,8 +3,9 @@ from flask_login import login_required, LoginManager, login_user, logout_user, c
 from db.database import obtener_conexion
 from flask import Flask, render_template, request, redirect, url_for, session, flash
 from werkzeug.utils import secure_filename
+from werkzeug.security import check_password_hash, generate_password_hash
 from db.forms import AgregarClienteForm, AgregarPlanForm, ActualizarPlanForm, LoginForm, RegistroClienteForm, AgregarAdminForm
-from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_id_cliente_por_usuario, eliminar_cliente_db, registrar_cliente, verificar_membresias_vencidas, buscar_cliente_por_id_con_membresias, editar_membresia, agregar_administrador_db, obtener_roles_del_usuario, rol_requerido, actualizar_estado_cliente, calcular_estado_membresia, actualizar_perfil_db
+from db.controlador import obtener_lista_clientes, agregar_cliente_db, buscar_cliente_por_id, actualizar_cliente_db, inactivar_cliente_db, obtener_lista_clientes_inactivos, reactivar_cliente_db, agregar_plan_db, obtener_planes_desde_db, obtener_plan_por_id, actualizar_plan_en_db, eliminar_plan_en_db, crear_membresia, obtener_membresias_cliente, obtener_todas_membresias, buscar_cliente_por_criterio, obtener_ultimos_clientes, obtener_nombres_y_precios_planes, obtener_id_cliente_por_usuario, eliminar_cliente_db, registrar_cliente, verificar_membresias_vencidas, buscar_cliente_por_id_con_membresias, editar_membresia, agregar_administrador_db, obtener_roles_del_usuario, rol_requerido, actualizar_estado_cliente, calcular_estado_membresia, actualizar_perfil_db, validar_cedula, cedula_unica
 from flask import jsonify
 from flask_sqlalchemy import SQLAlchemy
 from db.models import db, Usuario, Membresia, Cliente
@@ -36,18 +37,18 @@ def load_user(user_id):
     return user
 
 
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
-    #verificar_membresias_vencidas()
     form = LoginForm()
     if form.validate_on_submit():
         username = form.username.data
         password = form.password.data
-        user = Usuario.query.filter_by(username=username, password=password).first()
-        print(f"Type of user: {type(user)}")
-        if user:
-            login_user(user)  
-            flash('Inicio de sesión exitoso', 'success')            
+        user = Usuario.query.filter_by(username=username).first()
+
+        if user and user.check_password(password):
+            login_user(user)
+            flash('Inicio de sesión exitoso', 'success')
             if user.role == 'admin':
                 return redirect(url_for('pagina_principal'))
             else:
@@ -83,23 +84,6 @@ def datos_usuario():
         return redirect(url_for('pagina_principal'))
 
 
-@app.route('/registro', methods=['GET', 'POST'])
-def registro_cliente():
-    form = RegistroClienteForm()
-
-    if form.validate_on_submit():
-        cedula = form.cedula.data
-        nombre = form.nombre.data
-        apellido = form.apellido.data
-        correo = form.correo.data
-        telefono = form.telefono.data
-        fecha_nacimiento = form.fecha_nacimiento.data          
-        password = form.password.data        
-        username = correo
-        registrar_cliente(cedula, nombre, apellido, correo, telefono, fecha_nacimiento, username, password)
-        return redirect(url_for('login'))
-
-    return render_template('registro_cliente.html', form=form)
 
 
 
@@ -186,8 +170,6 @@ def editar_membresia_route(id_membresia):
     nombres_y_precios_planes = obtener_nombres_y_precios_planes(id_planes)
     
     return render_template('editar_membresia.html', membresia=membresia, nombres_y_precios_planes=nombres_y_precios_planes, cliente=cliente)
-
-
 
 
 
@@ -420,7 +402,6 @@ def reactivar_cliente(id_cliente):
 
 @app.route('/datos_cliente/<int:id_cliente>')
 @login_required
-
 def datos_cliente(id_cliente):
     cliente = buscar_cliente_por_id_con_membresias(id_cliente)
     if cliente:        
@@ -438,6 +419,34 @@ def datos_cliente(id_cliente):
         return redirect(url_for('lista_clientes'))
 
 
+@app.route('/registro', methods=['GET', 'POST'])
+def registro_cliente():
+    form = RegistroClienteForm()
+
+    if form.validate_on_submit():
+        cedula = form.cedula.data
+        nombre = form.nombre.data
+        apellido = form.apellido.data
+        correo = form.correo.data
+        telefono = form.telefono.data
+        fecha_nacimiento = form.fecha_nacimiento.data          
+        password = form.password.data        
+        username = correo
+                
+        if not validar_cedula(cedula):
+            flash("Cédula inválida. Debe ser un número de 10 dígitos.", "error")
+            return render_template('registro_cliente.html', form=form)
+
+        if not cedula_unica(cedula):
+            flash("Error: La cédula ya está registrada en el sistema.", "error")
+            return render_template('registro_cliente.html', form=form)
+        
+        registrar_cliente(cedula, nombre, apellido, correo, telefono, fecha_nacimiento, username, password)
+        return redirect(url_for('login'))
+
+    return render_template('registro_cliente.html', form=form)
+
+
 
 @app.route('/agregar_cliente', methods=['GET', 'POST'])
 @rol_requerido('admin')
@@ -451,6 +460,14 @@ def agregar_cliente():
         correo = form.correo.data
         telefono = form.telefono.data
         fecha_nacimiento = form.fecha_nacimiento.data
+                
+        if not validar_cedula(cedula):
+            flash("Cédula inválida. Debe ser un número de 10 dígitos.", "error")
+            return render_template('agregar_cliente.html', form=form)
+
+        if not cedula_unica(cedula):
+            flash("Error: La cédula ya está registrada en el sistema.", "error")
+            return render_template('agregar_cliente.html', form=form)
 
         
         if 'foto' in request.files:
@@ -474,11 +491,9 @@ def agregar_cliente():
 @app.route('/actualizar_cliente/<int:id_cliente>', methods=['GET', 'POST'])
 @rol_requerido('admin')
 def actualizar_cliente(id_cliente):
-    form = AgregarClienteForm()
-
-    
+    form = AgregarClienteForm()    
     cliente = buscar_cliente_por_id(id_cliente)
-
+    
     if cliente is None:
         flash("Cliente no encontrado.", "error")
         return redirect(url_for('lista_clientes'))
@@ -495,19 +510,35 @@ def actualizar_cliente(id_cliente):
                 filename = None
         else:
             filename = None
-
         
-        actualizar_cliente_db(
-            id_cliente,
-            form.cedula.data,
-            form.nombre.data,
-            form.apellido.data,
-            form.correo.data,
-            form.telefono.data,
-            form.fecha_nacimiento.data,  
-            filename
-        )
-
+        nueva_contrasena = form.nueva_contrasena.data
+        if nueva_contrasena:
+            nueva_contrasena_hash = generate_password_hash(nueva_contrasena, method='pbkdf2:sha256')
+        
+            actualizar_cliente_db(
+                id_cliente,
+                form.cedula.data,
+                form.nombre.data,
+                form.apellido.data,
+                form.correo.data,
+                form.telefono.data,
+                form.fecha_nacimiento.data,  
+                filename,
+                nueva_contrasena_hash
+            )
+            
+        else:            
+            actualizar_cliente_db(
+                id_cliente,
+                form.cedula.data,
+                form.nombre.data,
+                form.apellido.data,
+                form.correo.data,
+                form.telefono.data,
+                form.fecha_nacimiento.data,  
+                filename
+            )        
+            
         return redirect(url_for('lista_clientes'))
 
     # Llenar el formulario con los datos actuales del cliente
@@ -537,7 +568,7 @@ def actualizar_perfil(id_cliente):
             return redirect((url_for('datos_cliente', id_cliente=id_cliente)))
 
         if request.method == 'POST' and form.validate_on_submit():
-            # Resto del código para actualizar el perfil
+            
             if 'foto' in request.files:
                 foto = request.files['foto']
                 if foto.filename != '' and allowed_file(foto.filename):
@@ -548,7 +579,7 @@ def actualizar_perfil(id_cliente):
                     filename = None
             else:
                 filename = None
-            
+            nueva_contrasena = form.nueva_contrasena.data
             actualizar_perfil_db(
                 id_cliente,
                 form.cedula.data,
@@ -557,7 +588,8 @@ def actualizar_perfil(id_cliente):
                 form.correo.data,
                 form.telefono.data,
                 form.fecha_nacimiento.data,  
-                filename
+                filename,
+                nueva_contrasena
             )
 
             print("Debug: Redirigiendo a datos_cliente después de actualizar perfil")            

@@ -17,6 +17,7 @@ class AgregarClienteForm(FlaskForm):
     telefono = StringField('Teléfono')
     fecha_nacimiento = DateField('Fecha de Nacimiento', validators=[DataRequired()], format='%Y-%m-%d')
     foto = FileField('Foto de Perfil')
+    nueva_contrasena = PasswordField('Nueva Contraseña')
     submit = SubmitField('Agregar/Actualizar Cliente')
 
 
